@@ -385,7 +385,7 @@ h1{letter-spacing:-1.3px}
 
     <div class="night-bottom">
       <div id="nightInfo" class="hint">
-        Normal: jederzeit sammelbar · Golden: nur während Halloween-Nacht. Reset um 03:00, 12:00 und 19:00 Uhr.
+        Normale und goldene Kürbisse jederzeit sammelbar. Reset um 03:00, 12:00 und 19:00 Uhr.
       </div>
       <div style="display:flex;gap:9px;flex-wrap:wrap"><button id="startNight" class="primary">▶ Halloween-Nacht starten</button><button id="stopNight" class="danger hidden" type="button">■ Nacht beenden</button></div>
     </div>
@@ -567,7 +567,7 @@ async function initAuth(){if(!supa){showMessage('authMessage','Supabase konnte n
 $('authForm').onsubmit=async e=>{e.preventDefault();if(authBusy||!supa)return;const username=$('username').value.trim(),password=$('password').value,inviteCode=$('invite').value.trim(),action=mode;if(!/^[a-zA-Z0-9_]{3,20}$/.test(username)){showMessage('authMessage','Benutzername: 3–20 Zeichen (Buchstaben, Zahlen, _).');return}if(password.length<8||password.length>128){showMessage('authMessage','Passwort muss 8–128 Zeichen haben.');return}if(action==='register'&&(inviteCode.length<8||inviteCode.length>256)){showMessage('authMessage','Ungültiger Einladungscode.');return}authBusy=true;$('authButton').disabled=true;try{const response=await fetch(CFG.url+'/functions/v1/pumpkin-auth',{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.key},body:JSON.stringify({action,username,password,inviteCode})});const result=await response.json().catch(()=>({}));if(!response.ok||!result.success)throw Error(result.error||'Anfrage fehlgeschlagen');if(action==='register'){$('password').value='';$('invite').value='';setTab('login');$('username').value=username;showMessage('authMessage','Registriert! Melde dich jetzt an.',true);return}if(!result.session?.access_token||!result.session?.refresh_token)throw Error('Die Anmeldung hat keine Sitzung zurückgegeben.');const {data,error}=await supa.auth.setSession({access_token:result.session.access_token,refresh_token:result.session.refresh_token});if(error||!data.user)throw Error('Sitzung konnte nicht gespeichert werden.');$('password').value='';await loginView(data.user)}catch(error){showMessage('authMessage',errorText(error))}finally{authBusy=false;$('authButton').disabled=false;$('authButton').textContent=mode==='login'?'Anmelden →':'Registrieren →'}};
 $('logout').onclick=async()=>{try{const {error}=await supa.auth.signOut({scope:'local'});if(error)throw error;logoutView()}catch(e){alert('Abmelden fehlgeschlagen: '+errorText(e))}};
 function isActiveNight(){return !!round && !round.stopped_at && Date.parse(round.started_at)<=Date.now() && Date.parse(round.ends_at)>Date.now()}
-function canCollect(spot){return spot.type==='normal'||isActiveNight()}
+function canCollect(spot){return Boolean(user)}
 function spotFromDB(s){return{id:s.id,name:s.name,area:s.area,notes:s.notes||'',type:s.type,mapId:s.map_id,x:s.x,y:s.y,image:s.image,created:Date.parse(s.created_at)||Date.now(),status:collections.has(s.id)?'done':'open'}}
 async function refreshAll(){
   if(!user||loading)return;
@@ -588,7 +588,7 @@ async function refreshAll(){
     round=rounds.find(r=>!r.stopped_at&&Date.parse(r.started_at)<=Date.now()&&Date.parse(r.ends_at)>Date.now())||null;
     const marks=await supa.from('pumpkin_marks').select('spot_id,scope').eq('user_id',user.id).eq('cycle_start',cycleStart);
     if(marks.error)throw marks.error;
-    collections=new Set((marks.data||[]).filter(m=>m.scope==='normal'||(isActiveNight()&&m.scope===round.id)).map(m=>m.spot_id));
+    collections=new Set((marks.data||[]).filter(m=>m.scope==='normal'||m.scope==='gold').map(m=>m.spot_id));
     spots=(b.data||[]).map(spotFromDB);
     $('add').classList.toggle('hidden',!isAdmin);
     $('startNight').classList.toggle('hidden',!isAdmin||isActiveNight());
@@ -612,7 +612,7 @@ async function startNight(){
 $('startNight').onclick=startNight;
 async function stopNight(){
   if(!user||!isAdmin||!isActiveNight()||busy)return;
-  if(!confirm('Halloween-Nacht wirklich JETZT für alle beenden? Goldene Kürbisse können danach nicht mehr gesammelt werden.'))return;
+  if(!confirm('Halloween-Nacht wirklich JETZT für alle beenden? Die persönlichen Häkchen bleiben bis zum nächsten regulären Reset bestehen.'))return;
   busy=true;
   try{const {error}=await supa.rpc('stop_pumpkin_round');if(error)throw error;await refreshAll()}
   catch(e){alert('Beenden fehlgeschlagen: '+errorText(e))}
@@ -624,7 +624,7 @@ function updateNight(){
   $('nightPanel').classList.toggle('active',active);
   $('nightBadge').textContent=active?'● RUNDE AKTIV':'● KEINE AKTIVE RUNDE';
   $('nightTimer').textContent=active?timeString(Date.parse(round.ends_at)-Date.now()):'04:00:00';
-  $('nightDescription').textContent=active?'Goldene Kürbisse sind jetzt sammelbar!':'Normale Kürbisse jederzeit · Goldene nur während einer Halloween-Nacht.';
+  $('nightDescription').textContent=active?'Halloween-Nacht läuft · Alle Kürbisse bleiben jederzeit sammelbar.':'Normale und goldene Kürbisse jederzeit sammelbar.';
   $('nightInfo').textContent=active?'Endet spätestens: '+new Date(round.ends_at).toLocaleString('de-DE')+' · Reset immer um 03:00, 12:00, 19:00 (Deutschland)':'Alle persönlichen Häkchen resetten um 03:00, 12:00 und 19:00 Uhr (Deutschland).';
   $('nightProgress').style.width=active?Math.max(0,Math.min(100,(Date.now()-Date.parse(round.started_at))/(4*3600000)*100))+'%':'0%';
   $('startNight').classList.toggle('hidden',!isAdmin||active);
@@ -633,11 +633,11 @@ function updateNight(){
 async function toggleCollected(spot){
   if(!user)return;
   if(!canCollect(spot)){
-    alert('Goldene Kürbisse kannst du nur während einer aktiven Halloween-Nacht sammeln.');return;
+    alert('Bitte melde dich an, um Kürbisse abzuhaken.');return;
   }
   if(busy)return;
   busy=true;
-  const scope=spot.type==='normal'?'normal':round.id;
+  const scope=spot.type==='normal'?'normal':'gold';
   try{
     const wasChecked=collections.has(spot.id);
     let result;
