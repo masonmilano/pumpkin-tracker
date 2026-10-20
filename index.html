@@ -584,8 +584,61 @@ function compress(file){return new Promise((resolve,reject)=>{if(!['image/jpeg',
 $('spotImage').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;const request=++photoRequest;const prior=photo;$('saveSpot').disabled=true;try{const result=await compress(file);if(request!==photoRequest)return;photo=result;updatePhoto();$('spotError').classList.add('hidden')}catch(error){if(request!==photoRequest)return;photo=prior;showMessage('spotError',errorText(error))}finally{if(request===photoRequest)$('saveSpot').disabled=false}};
 $('spotForm').onsubmit=async e=>{e.preventDefault();if(!isAdmin||busy)return;if(!pendingPosition){showMessage('spotError','Bitte wähle eine Position auf der Karte.');return}const name=$('spotName').value.trim(),area=$('area').value.trim(),notes=$('spotNotes').value.trim(),type=document.querySelector('input[name="pumpkinType"]:checked').value;if(!name||!area){showMessage('spotError','Bitte Name und Gebiet angeben.');return}if(spots.some(s=>s.id!==editId&&s.name.toLowerCase()===name.toLowerCase()&&s.area.toLowerCase()===area.toLowerCase())&&!confirm('Ähnlicher Spot vorhanden. Trotzdem speichern?'))return;const data={name,area,notes,type,map_id:pendingPosition.mapId,x:pendingPosition.x,y:pendingPosition.y,image:photo};busy=true;$('saveSpot').disabled=true;try{let result;if(editId){result=await supa.from('pumpkin_spots').update(data).eq('id',editId)}else{result=await supa.from('pumpkin_spots').insert({...data,created_by:user.id})}if(result.error)throw result.error;closeModal();await refreshAll()}catch(error){showMessage('spotError',errorText(error))}finally{busy=false;$('saveSpot').disabled=false}};
 async function deleteSpot(spot){if(!isAdmin||busy||!confirm('Spot "'+spot.name+'" dauerhaft löschen?'))return;busy=true;try{const {error}=await supa.from('pumpkin_spots').delete().eq('id',spot.id);if(error)throw error;await refreshAll()}catch(e){alert('Löschen fehlgeschlagen: '+errorText(e))}finally{busy=false}}
-function initializeMap(){if(!window.L){$('mapError').textContent='Leaflet konnte nicht geladen werden.';$('mapError').classList.remove('hidden');return}if(!mapInstance){mapInstance=L.map('pumpkinMap',{crs:L.CRS.Simple,minZoom:-5,maxZoom:4,zoomSnap:.25,attributionControl:false});mapLayer=L.layerGroup().addTo(mapInstance);mapInstance.on('click',e=>{if(!isAdmin||!mapBounds)return;const x=e.latlng.lng/mapW,y=1-e.latlng.lat/mapH;if(x<0||x>1||y<0||y>1)return;openModal(null,{mapId:activeMap,x,y})})}requestAnimationFrame(()=>{mapInstance.invalidateSize();selectMap(activeMap)})}
-function selectMap(id){if(!Object.hasOwn(MAPS,id))return;activeMap=id;document.querySelectorAll('.map-tab').forEach(btn=>btn.classList.toggle('active',btn.dataset.map===id));if(!mapInstance)return;const token=++mapToken,src=MAPS[id].src,img=new Image();$('mapError').classList.add('hidden');img.onload=()=>{if(token!==mapToken)return;mapW=img.naturalWidth;mapH=img.naturalHeight;mapBounds=[[0,0],[mapH,mapW]];if(mapOverlay)mapInstance.removeLayer(mapOverlay);mapOverlay=L.imageOverlay(src,mapBounds).addTo(mapInstance);mapInstance.setMaxBounds(mapBounds);mapInstance.fitBounds(mapBounds,{animate:false});mapInstance.setMinZoom(Math.min(-5,mapInstance.getZoom()-1));renderMapMarkers()};img.onerror=()=>{if(token!==mapToken)return;if(mapOverlay)mapInstance.removeLayer(mapOverlay);mapOverlay=null;mapBounds=null;mapLayer?.clearLayers();$('mapError').textContent='Bild nicht gefunden: '+src;$('mapError').classList.remove('hidden')};img.src=src}
+function createSpotAtMapClick(e) {
+  if (!isAdmin || !user || !mapBounds) return;
+  const x=e.latlng.lng/mapW, y=1-e.latlng.lat/mapH;
+  if (!Number.isFinite(x)||!Number.isFinite(y)||x<0||x>1||y<0||y>1)return;
+  if (!$('modalbg').classList.contains('hidden')) return;
+  openModal(null,{mapId:activeMap,x,y});
+}
+function initializeMap(){
+  if(!window.L){
+    $('mapError').textContent='Leaflet konnte nicht geladen werden.';
+    $('mapError').classList.remove('hidden');return;
+  }
+  if(!mapInstance){
+    mapInstance=L.map('pumpkinMap',{
+      crs:L.CRS.Simple,minZoom:-5,maxZoom:4,zoomSnap:.25,
+      attributionControl:false,maxBoundsViscosity:1.0
+    });
+    mapLayer=L.layerGroup().addTo(mapInstance);
+    mapInstance.on('click',createSpotAtMapClick);
+  }
+  requestAnimationFrame(()=>{mapInstance.invalidateSize();selectMap(activeMap)});
+}
+function selectMap(id){
+  if(!Object.hasOwn(MAPS,id))return;
+  activeMap=id;
+  document.querySelectorAll('.map-tab').forEach(btn=>btn.classList.toggle('active',btn.dataset.map===id));
+  if(!mapInstance)return;
+  const token=++mapToken,src=MAPS[id].src,img=new Image();
+  $('mapError').classList.add('hidden');
+  img.onload=()=>{
+    if(token!==mapToken)return;
+    mapW=img.naturalWidth;mapH=img.naturalHeight;
+    mapBounds=[[0,0],[mapH,mapW]];
+    if(mapOverlay)mapInstance.removeLayer(mapOverlay);
+    mapOverlay=L.imageOverlay(src,mapBounds,{interactive:true,bubblingMouseEvents:false}).addTo(mapInstance);
+    mapOverlay.on('click',createSpotAtMapClick);
+    // Erst Zoom-Untergrenze zurücksetzen, dann neue Karte einpassen.
+    mapInstance.setMinZoom(-5);
+    mapInstance.setMaxBounds(mapBounds);
+    mapInstance.fitBounds(mapBounds,{animate:false});
+    // Kein Herauszoomen unter die ganz sichtbare PNG.
+    mapInstance.setMinZoom(mapInstance.getZoom());
+    mapInstance.panInsideBounds(mapBounds,{animate:false});
+    renderMapMarkers();
+  };
+  img.onerror=()=>{
+    if(token!==mapToken)return;
+    if(mapOverlay)mapInstance.removeLayer(mapOverlay);
+    mapOverlay=null;mapBounds=null;mapLayer?.clearLayers();
+    $('mapError').textContent='Bild nicht gefunden: '+src;
+    $('mapError').classList.remove('hidden');
+  };
+  img.src=src;
+}
+
 document.querySelectorAll('.map-tab').forEach(btn=>btn.onclick=()=>selectMap(btn.dataset.map));$('resetMapView').onclick=()=>{if(mapInstance&&mapBounds)mapInstance.fitBounds(mapBounds)};
 function renderMapMarkers(){if(!mapInstance||!mapLayer||!mapBounds)return;mapLayer.clearLayers();for(const spot of spots){if(spot.mapId!==activeMap)continue;const emoji=spot.type==='gold'?'🌟':'🎃';const marker=L.marker([(1-spot.y)*mapH,spot.x*mapW],{icon:L.divIcon({className:'pumpkin-pin '+(spot.type==='gold'?'gold ':'')+spot.status,html:'<span>'+emoji+'</span>',iconSize:[35,35],iconAnchor:[17,17]}),title:spot.name});const popup=document.createElement('div');const title=document.createElement('strong');title.textContent=spot.name;const line=document.createElement('div');line.textContent=spot.area+' · '+labels[spot.status];const button=document.createElement('button');button.type='button';button.textContent=spot.status==='done'?'↩ Häkchen entfernen':'✓ Für mich gesammelt';button.disabled=!round;button.onclick=async()=>{await toggleCollected(spot);mapInstance.closePopup()};popup.append(title,line,button);if(spot.image){const pic=document.createElement('img');pic.src=spot.image;pic.style.cssText='display:block;width:180px;max-height:120px;object-fit:cover;margin-top:7px;border-radius:7px';popup.append(pic)}if(isAdmin){const edit=document.createElement('button');edit.type='button';edit.textContent='✎ Bearbeiten';edit.onclick=()=>{mapInstance.closePopup();openModal(spot.id)};popup.append(edit)}marker.bindPopup(popup).addTo(mapLayer)}}
 $('export').onclick=()=>{const blob=new Blob([JSON.stringify({app:'pumpkin-tracker',version:5,exportedAt:new Date().toISOString(),spots:spots.map(s=>({...s,status:undefined}))},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='pumpkin-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),2000)};
