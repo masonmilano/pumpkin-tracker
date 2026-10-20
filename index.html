@@ -3,321 +3,281 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#0b0d10">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b0d11">
 <title>Pumpkin Tracker | Crew HQ</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
-:root {
-  color-scheme: dark;
-  --bg:#0b0d10;
-  --panel:#15191e;
-  --panel2:#1c2128;
-  --line:#2c333d;
+:root{
+  color-scheme:dark;
+  --bg:#0b0d11;
+  --panel:#15191f;
+  --panel2:#1c222a;
+  --border:#2c333e;
   --text:#f5f6f8;
-  --muted:#929ba8;
-  --orange:#ff913e;
-  --gold:#f7c84a;
-  --green:#77d6a3;
+  --muted:#929ca9;
+  --orange:#ff923e;
+  --gold:#f8c94f;
+  --green:#7cdbad;
   --red:#ff8585;
 }
 *{box-sizing:border-box}
 body{
   margin:0;
-  min-height:100vh;
-  background:radial-gradient(ellipse at 80% -20%,#302116,transparent 40%),var(--bg);
   color:var(--text);
-  font-family:'DM Sans',sans-serif;
+  background:
+    radial-gradient(ellipse at 85% -10%,#352417 0,transparent 38%),
+    var(--bg);
+  font-family:"DM Sans",sans-serif;
+  min-height:100vh;
 }
-button,input,select,textarea{font:inherit}
+button,input,textarea,select{font:inherit}
 button{cursor:pointer}
-button:disabled{opacity:.5;cursor:not-allowed}
+button:disabled{opacity:.55;cursor:not-allowed}
 .hidden{display:none!important}
-.wrap{max-width:1280px;margin:auto;padding:0 22px}
+.wrap{width:min(1240px,calc(100% - 32px));margin:auto}
 nav{
-  height:76px;display:flex;align-items:center;
-  justify-content:space-between;gap:15px;
-  border-bottom:1px solid var(--line);
+  min-height:75px;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;border-bottom:1px solid var(--border);
 }
-.logo{
-  display:flex;align-items:center;gap:10px;
-  font:700 19px 'Space Grotesk',sans-serif;
+.brand{display:flex;align-items:center;gap:10px;font:700 19px "Space Grotesk"}
+.brand b{color:var(--orange)}
+.brand-icon{
+  width:42px;height:42px;border-radius:13px;
+  display:grid;place-items:center;font-size:26px;
+  background:#352316;border:1px solid #684426;
 }
-.logo b{color:var(--orange)}
-.logo svg{width:43px;height:43px}
-.navright{display:flex;align-items:center;gap:12px}
-.muted{color:var(--muted)}
-.pill{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:7px 11px;border-radius:30px;
-  background:#243029;border:1px solid #365040;
-  color:#a6e7bd;font-size:12px;
+.nav-actions{display:flex;gap:10px;align-items:center}
+.tag{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 11px;border-radius:999px;
+  background:#203127;color:#a7e7bf;
+  border:1px solid #36503e;font-size:11px;font-weight:800;
 }
-.btn{
-  background:var(--panel2);
-  border:1px solid var(--line);
-  color:var(--text);border-radius:11px;
-  padding:11px 15px;font-weight:700;
-  transition:.2s;
+button,.button{
+  background:var(--panel2);border:1px solid var(--border);
+  border-radius:11px;color:var(--text);
+  padding:11px 14px;font-weight:700;
 }
-.btn:hover{border-color:#747b86}
-.btn.primary{
-  background:var(--orange);
-  border-color:var(--orange);
-  color:#1d1209;
+button:hover{border-color:#65707c}
+button.primary{
+  background:var(--orange);border-color:var(--orange);
+  color:#211308;
 }
-.btn.primary:hover{background:#ffad6e}
-.btn.small{padding:8px 11px;font-size:12px}
-.btn.danger{color:var(--red)}
+button.primary:hover{background:#ffae70}
+button.small{padding:8px 11px;font-size:12px}
+button.danger{color:var(--red)}
 .panel{
-  background:var(--panel);
-  border:1px solid var(--line);
+  background:var(--panel);border:1px solid var(--border);
   border-radius:17px;
 }
+.muted{color:var(--muted)}
 .eyebrow{
   color:var(--orange);font-size:11px;
-  letter-spacing:2px;font-weight:800;
+  font-weight:800;letter-spacing:2px;
 }
-h1,h2,h3{font-family:'Space Grotesk',sans-serif}
+h1,h2,h3{font-family:"Space Grotesk",sans-serif}
+h1{letter-spacing:-1.3px}
 .auth{
-  min-height:calc(100vh - 145px);
+  min-height:calc(100vh - 140px);
   display:grid;grid-template-columns:1fr 430px;
-  gap:50px;align-items:center;
+  align-items:center;gap:50px;padding:45px 0;
 }
-.authhero h1{
-  font-size:clamp(48px,6vw,78px);
-  line-height:1.05;letter-spacing:-3px;
-  margin:16px 0 20px;
+.hero h1{
+  font-size:clamp(45px,6vw,76px);
+  line-height:1.05;letter-spacing:-3px;margin:18px 0;
 }
-.authhero h1 span{color:var(--orange)}
-.authhero p{
-  max-width:460px;color:var(--muted);
-  line-height:1.8;
-}
-.authbox{padding:28px}
-.authbox h2{margin:20px 0 6px}
-.tabs{
-  display:flex;padding:4px;gap:4px;
-  background:#0e1115;border-radius:11px;
-}
-.tabs button{
-  flex:1;padding:12px;border:0;
-  border-radius:8px;background:transparent;
-  color:var(--muted);font-weight:700;
-}
-.tabs button.active{background:#30353d;color:white}
+.hero h1 span{color:var(--orange)}
+.hero p{max-width:450px;color:var(--muted);line-height:1.8}
+.authbox{padding:27px}
+.authbox h2{margin:20px 0 5px}
+.tabs{display:flex;background:#0d1015;padding:4px;border-radius:11px;gap:4px}
+.tabs button{flex:1;background:transparent;border:0;color:var(--muted)}
+.tabs button.active{background:#303741;color:white}
 .form{display:grid;gap:15px;margin-top:20px}
 .field{display:grid;gap:7px}
-.field label{
-  color:#cbd0d8;font-size:12px;
-  font-weight:700;
+.field label{font-size:12px;color:#cbd1d9;font-weight:800}
+.field input,.field select,.field textarea,.control{
+  background:#0d1116;border:1px solid #353d48;
+  border-radius:10px;color:white;padding:12px;width:100%;
+  outline:none;
 }
-.field input,.field select,.field textarea{
-  width:100%;background:#0d1115;
-  border:1px solid #353c46;
-  border-radius:10px;color:white;
-  padding:12px;outline:none;
-}
-.field textarea{min-height:90px;resize:vertical}
-.field input:focus,.field select:focus,
-.field textarea:focus{border-color:var(--orange)}
-.hint{
-  color:var(--muted);font-size:12px;
-  line-height:1.6;
-}
+.field textarea{min-height:95px;resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus,
+.control:focus{border-color:var(--orange)}
+.hint{font-size:12px;color:var(--muted);line-height:1.6}
 .message{
-  padding:12px;border-radius:10px;
-  background:#342318;border:1px solid #755039;
-  color:#ffd4b5;font-size:13px;
+  padding:12px;border-radius:10px;background:#38271b;
+  border:1px solid #795438;color:#ffd7b9;
+  font-size:12px;line-height:1.6;
 }
 .message.good{
-  background:#193124;border-color:#376348;
-  color:#b1e7c6;
+  background:#1b3326;border-color:#40674b;color:#b8ebc9;
 }
 .intro{
-  display:flex;justify-content:space-between;
-  align-items:end;gap:15px;margin:34px 0 24px;
+  display:flex;align-items:end;justify-content:space-between;
+  gap:15px;margin:35px 0 23px;
 }
-.intro h1{
-  font-size:clamp(30px,4vw,44px);
-  letter-spacing:-1.5px;margin:6px 0;
+.intro h1{font-size:clamp(30px,4vw,44px);margin:7px 0}
+.intro p{margin:0;font-size:13px;color:var(--muted)}
+.warning{
+  background:#2e241b;border:1px solid #624932;
+  color:#f2c9a2;padding:13px 15px;
+  border-radius:12px;font-size:12px;line-height:1.6;
+  margin-bottom:20px;
 }
-.intro p{color:var(--muted);font-size:14px;margin:0}
+.night{
+  padding:22px;margin-bottom:20px;
+  background:
+    radial-gradient(circle at 95% 5%,#48301a,transparent 40%),
+    var(--panel);
+}
+.night-top{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;flex-wrap:wrap;
+}
+.night-title{font-size:19px;font-weight:700}
+.night-timer{
+  font:700 clamp(35px,6vw,62px) "Space Grotesk";
+  letter-spacing:-2px;margin:15px 0 7px;
+  font-variant-numeric:tabular-nums;
+}
+.night.active{border-color:#87552b}
+.night.active .night-timer{color:var(--orange)}
+.night-bottom{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:15px;flex-wrap:wrap;
+}
+.progressbar{
+  height:7px;border-radius:20px;background:#30343c;
+  overflow:hidden;margin:17px 0;
+}
+.progressfill{
+  height:100%;width:0;background:var(--orange);
+  transition:width .5s;
+}
 .stats{
-  display:grid;grid-template-columns:repeat(5,1fr);
+  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
   gap:12px;
 }
-.stat{padding:19px}
-.stat .label{font-size:12px;color:var(--muted)}
+.stat{padding:19px;min-width:0}
+.stat span{font-size:12px;color:var(--muted)}
 .stat strong{
-  display:block;font:700 33px 'Space Grotesk';
-  margin:9px 0;
+  display:block;font:700 32px "Space Grotesk";
+  margin:8px 0;
 }
-.stat .hint{font-size:11px}
+.orange{color:var(--orange)}
 .goldtext{color:var(--gold)}
-.orangetext{color:var(--orange)}
-.tools{
-  display:flex;gap:10px;flex-wrap:wrap;
-  margin:24px 0 18px;
-}
-.control{
-  background:var(--panel);color:var(--text);
-  border:1px solid var(--line);
-  border-radius:11px;padding:12px;
-  outline:none;min-width:0;
-}
-.control:focus{border-color:var(--orange)}
-.search{flex:1;min-width:180px}
+.tools{display:flex;gap:9px;flex-wrap:wrap;margin:25px 0 18px}
+.tools .search{flex:1;min-width:180px}
+.tools select{width:auto;max-width:100%}
 .grid{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
   gap:15px;
 }
-.spot{
-  overflow:hidden;display:flex;
-  flex-direction:column;min-width:0;
-  transition:transform .2s,border-color .2s;
-}
-.spot:hover{
-  transform:translateY(-3px);
-  border-color:#515a66;
-}
-.spot.gold{border-color:#79632d}
+.spot{overflow:hidden;min-width:0}
+.spot.gold{border-color:#79632e}
 .cover{
-  height:185px;position:relative;
-  background:linear-gradient(145deg,#2d251c,#1a2027);
-  display:flex;align-items:center;justify-content:center;
-  overflow:hidden;
+  height:185px;position:relative;display:grid;
+  place-items:center;overflow:hidden;
+  background:linear-gradient(145deg,#35281d,#1a2027);
 }
 .spot.gold .cover{
-  background:linear-gradient(145deg,#473716,#1d2025);
+  background:linear-gradient(145deg,#463816,#1c2128);
 }
 .cover img{width:100%;height:100%;object-fit:cover}
-.fallback{font-size:60px;opacity:.8}
-.marker{
-  position:absolute;top:12px;right:12px;
-  background:#0c0e12e8;border:1px solid #ffffff22;
-  padding:7px 10px;border-radius:9px;
-  font-size:12px;font-weight:800;
-  backdrop-filter:blur(8px);
+.cover .emoji{font-size:58px}
+.marker,.statusbadge{
+  position:absolute;top:12px;
+  padding:7px 10px;background:#0b0e12e8;
+  border:1px solid #ffffff20;border-radius:9px;
+  font-size:11px;font-weight:800;
 }
-.marker.gold{
-  color:var(--gold);
-  border-color:#f7c84a55;
-}
-.marker.normal{color:var(--orange)}
-.status{
-  position:absolute;left:12px;top:12px;
-  padding:7px 10px;border-radius:9px;
-  background:#0c0e12e8;font-size:11px;
-  font-weight:800;
-}
-.status.open{color:var(--green)}
-.status.check{color:#aebfff}
-.status.done{color:#ffb778}
-.spotbody{
-  padding:17px;display:flex;
-  flex-direction:column;flex:1;
-}
-.spotbody h3{margin:0 0 7px;font-size:18px}
-.spotmeta{color:var(--muted);font-size:12px}
+.marker{right:12px;color:var(--orange)}
+.marker.gold{color:var(--gold);border-color:#f8c94f55}
+.statusbadge{left:12px}
+.statusbadge.done{color:var(--green)}
+.statusbadge.check{color:#aebeff}
+.statusbadge.open{color:#ffba84}
+.spotbody{padding:17px;display:flex;flex-direction:column;min-height:190px}
+.spotbody h3{font-size:18px;margin:0 0 7px}
+.spotbody .area{font-size:12px;color:var(--muted)}
 .spotbody p{
-  color:var(--muted);font-size:13px;
-  line-height:1.6;white-space:pre-wrap;
-  overflow-wrap:anywhere;
+  color:var(--muted);font-size:13px;line-height:1.6;
+  white-space:pre-wrap;overflow-wrap:anywhere;
 }
-.actions{
-  display:flex;gap:7px;flex-wrap:wrap;
-  margin-top:auto;padding-top:14px;
-}
+.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:auto}
 .actions button{flex:1}
 .empty{
-  grid-column:1/-1;text-align:center;
-  padding:70px 15px;color:var(--muted);
-  border:1px dashed var(--line);
-  border-radius:17px;
+  grid-column:1/-1;border:1px dashed var(--border);
+  border-radius:17px;text-align:center;
+  padding:65px 15px;color:var(--muted);
 }
-.banner{
-  padding:13px 15px;border-radius:12px;
-  background:#30251b;border:1px solid #604831;
-  color:#f5cca4;font-size:12px;
-  margin:18px 0;line-height:1.6;
+.sectiontitle{margin:30px 0 14px;font-size:20px}
+.history{padding:8px 17px}
+.historyrow{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:13px 0;border-bottom:1px solid var(--border);
+  font-size:12px;
 }
+.historyrow:last-child{border-bottom:0}
 .modalbg{
-  position:fixed;inset:0;z-index:20;
-  background:#000c;display:grid;
-  place-items:center;padding:15px;
-  overflow-y:auto;
+  position:fixed;inset:0;z-index:20;background:#000c;
+  display:grid;place-items:center;padding:15px;
 }
 .modal{
-  width:min(540px,100%);
-  max-height:94vh;overflow-y:auto;
-  padding:24px;
+  width:min(540px,100%);max-height:94vh;
+  overflow-y:auto;padding:24px;
 }
 .modalhead{
-  display:flex;align-items:center;
-  justify-content:space-between;
+  display:flex;align-items:center;justify-content:space-between;
 }
 .modalhead h2{margin:0}
+.types{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.type{
+  display:flex;align-items:center;gap:8px;
+  border:1px solid var(--border);border-radius:11px;
+  background:#101419;padding:13px;cursor:pointer;
+}
+.type:has(input:checked){border-color:var(--orange);background:#352419}
+.type.gold:has(input:checked){border-color:var(--gold);background:#352e18}
+.type span{font-size:24px}
 .upload{
-  border:1px dashed #58616c;
-  border-radius:12px;padding:15px;
-  background:#10151b;
+  border:1px dashed #58616c;border-radius:12px;
+  padding:14px;background:#10151b;
 }
 .preview{
-  max-width:100%;max-height:180px;
-  object-fit:contain;border-radius:9px;
-  margin-top:10px;
+  max-width:100%;max-height:180px;object-fit:contain;
+  border-radius:9px;margin-top:10px;
 }
-.typechoices{
-  display:grid;grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-.typechoice{
-  display:flex;align-items:center;gap:9px;
-  padding:14px;border-radius:11px;
-  border:1px solid var(--line);
-  background:#101419;cursor:pointer;
-  font-size:13px;
-}
-.typechoice:has(input:checked){
-  border-color:var(--orange);
-  background:#352317;
-}
-.typechoice.gold:has(input:checked){
-  border-color:var(--gold);
-  background:#332b16;
-}
-.typechoice input{accent-color:var(--orange)}
-.typechoice span{font-size:24px}
 .footer{
-  text-align:center;color:#777f8b;
-  font-size:12px;padding:45px 15px;
+  text-align:center;padding:40px 15px;
+  color:#7d8590;font-size:12px;
 }
 @media(max-width:1000px){
-  .stats{grid-template-columns:repeat(3,1fr)}
-  .grid{grid-template-columns:repeat(2,1fr)}
-  .auth{grid-template-columns:1fr;padding:45px 0}
+  .auth{grid-template-columns:1fr}
   .authbox{max-width:520px}
+  .stats{grid-template-columns:repeat(3,1fr)}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
-@media(max-width:600px){
-  .wrap{padding:0 15px}
-  nav{height:70px}
-  .logo{font-size:16px}
-  .logo svg{width:35px;height:35px}
-  .navright .pill{display:none}
+@media(max-width:650px){
+  .brand{font-size:15px}
+  .brand-icon{width:36px;height:36px;font-size:23px}
+  .nav-actions .tag{display:none}
+  .hero h1{font-size:49px}
+  .authbox{padding:20px}
   .intro{flex-direction:column;align-items:stretch}
-  .intro .btn{width:100%}
-  .stats{grid-template-columns:repeat(2,1fr);gap:9px}
+  .intro button{width:100%}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
   .stat{padding:15px}
-  .stat strong{font-size:29px}
+  .stat strong{font-size:28px}
   .tools .search{flex-basis:100%}
   .tools select{flex:1}
   .grid{grid-template-columns:1fr}
   .cover{height:210px}
-  .authhero h1{font-size:49px}
-  .authbox{padding:20px}
+  .night{padding:17px}
 }
 </style>
 </head>
@@ -325,47 +285,33 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 
 <div class="wrap">
 <nav>
-  <div class="logo">
-    <svg viewBox="0 0 64 64" aria-label="Pumpkin Tracker Logo">
-      <defs>
-        <linearGradient id="pumpkinGradient" x1="0" y1="0" x2="1" y2="1">
-          <stop stop-color="#ffbb58"/>
-          <stop offset="1" stop-color="#f16a24"/>
-        </linearGradient>
-      </defs>
-      <path d="M31 17c-2-8 1-12 8-13-3 5-3 9 1 13"
-        stroke="#8fd076" stroke-width="5" fill="none"
-        stroke-linecap="round"/>
-      <path d="M32 18C16 8 7 21 9 38s17 22 23 17c6 5 21 0 23-17S48 8 32 18Z"
-        fill="url(#pumpkinGradient)" stroke="#ffc37c" stroke-width="2"/>
-      <path d="M30 21c-7 8-8 23 0 32m4-32c7 8 8 23 0 32"
-        fill="none" stroke="#a74416" stroke-width="2" opacity=".5"/>
-      <path d="m17 34 12-6-5 12Zm30 0-12-6 5 12Zm-26 12 8 2 3-3 3 3 8-2-6 7H27Z"
-        fill="#18110e"/>
-    </svg>
+  <div class="brand">
+    <div class="brand-icon">🎃</div>
     <div>PUMPKIN <b>TRACKER</b></div>
   </div>
-  <div class="navright">
-    <span class="pill">● CREW HQ</span>
-    <button id="logout" class="btn small hidden">Abmelden</button>
+  <div class="nav-actions">
+    <span class="tag">● CREW HQ</span>
+    <button id="logout" class="small hidden">Abmelden</button>
   </div>
 </nav>
 </div>
 
 <section id="auth" class="wrap auth">
-  <div class="authhero">
+  <div class="hero">
     <div class="eyebrow">PRIVATE CREW TRACKER</div>
     <h1>Every spot.<br>Every find.<br><span>One place.</span></h1>
-    <p>Alle Kürbis-Fundorte, Screenshots und Fortschritte an einem Ort. Organisiert, schnell und übersichtlich.</p>
-    <span class="pill">🎃 Private Crew · Invite only</span>
+    <p>Alle Kürbis-Fundorte, Screenshots und Halloween-Nächte an einem Ort. Für deine Crew entwickelt.</p>
+    <span class="tag">🎃 PRIVATE CREW · INVITE ONLY</span>
   </div>
+
   <div class="panel authbox">
     <div class="tabs">
-      <button id="tabLogin" class="active">Anmelden</button>
-      <button id="tabRegister">Registrieren</button>
+      <button id="tabLogin" class="active" type="button">Anmelden</button>
+      <button id="tabRegister" type="button">Registrieren</button>
     </div>
     <h2 id="authTitle">Willkommen zurück.</h2>
     <p class="hint">Dein privater Pumpkin Tracker.</p>
+
     <form id="authForm" class="form">
       <div class="field">
         <label for="username">Benutzername</label>
@@ -373,17 +319,18 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
       </div>
       <div class="field">
         <label for="password">Passwort</label>
-        <input id="password" type="password" required minlength="8" placeholder="Passwort">
+        <input id="password" type="password" required minlength="8" autocomplete="current-password" placeholder="Passwort">
       </div>
       <div class="field hidden" id="inviteWrap">
         <label for="invite">Einladungscode</label>
-        <input id="invite" placeholder="Dein Einladungscode">
+        <input id="invite" placeholder="Einladungscode">
       </div>
-      <button id="authButton" class="btn primary">Anmelden →</button>
+      <button id="authButton" class="primary">Anmelden →</button>
       <div id="authMessage" class="message hidden"></div>
     </form>
+
     <p class="hint">Keine persönliche E-Mail erforderlich.</p>
-    <button id="previewMode" class="btn" style="width:100%;margin-top:12px">
+    <button id="previewMode" style="width:100%;margin-top:12px">
       Dashboard-Vorschau öffnen
     </button>
   </div>
@@ -392,58 +339,87 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 <main id="app" class="wrap hidden">
   <section class="intro">
     <div>
-      <div class="eyebrow">SPOT MANAGEMENT</div>
-      <h1>Dein Dashboard <span class="orangetext">↗</span></h1>
-      <p>Verwalte normale und goldene Kürbis-Spots.</p>
+      <div class="eyebrow">HALLOWEEN CREW CONTROL</div>
+      <h1>Dein Dashboard <span class="orange">↗</span></h1>
+      <p>Verwalte Kürbis-Spots und eure Halloween-Nächte.</p>
     </div>
-    <button id="add" class="btn primary">＋ Neuen Spot erstellen</button>
+    <button id="add" class="primary">＋ Neuen Spot erstellen</button>
   </section>
 
-  <div class="banner">
-    ⚠️ Vorschaumodus: Spots und Bilder werden nur in diesem Browser gespeichert. Die gemeinsame Supabase-Synchronisierung folgt später.
+  <div class="warning">
+    ⚠️ Lokale Vorschau: Halloween-Nächte, Spots und Screenshots werden derzeit nur in diesem Browser gespeichert. Für die gemeinsame Crew-Nutzung fehlt noch die Supabase-Datenbankanbindung.
   </div>
+
+  <section id="nightPanel" class="panel night">
+    <div class="night-top">
+      <div>
+        <div class="eyebrow">HALLOWEEN NIGHT SYSTEM</div>
+        <div class="night-title" style="margin-top:8px">🌙 Halloween-Nacht</div>
+      </div>
+      <span id="nightBadge" class="tag">● KEINE AKTIVE RUNDE</span>
+    </div>
+
+    <div id="nightTimer" class="night-timer">04:00:00</div>
+    <div id="nightDescription" class="hint">
+      Starte eine neue Suchphase. Jede Runde dauert genau vier Stunden.
+    </div>
+
+    <div class="progressbar">
+      <div id="nightProgress" class="progressfill"></div>
+    </div>
+
+    <div class="night-bottom">
+      <div id="nightInfo" class="hint">
+        Alle gesammelten Kürbisse werden nach Ablauf zurückgesetzt.
+      </div>
+      <button id="startNight" class="primary">▶ Halloween-Nacht starten</button>
+    </div>
+  </section>
 
   <section class="stats">
     <div class="panel stat">
-      <div class="label">Alle Spots</div>
+      <span>Alle Spots</span>
       <strong id="total">0</strong>
-      <div class="hint">Gesamt erfasst</div>
+      <div class="hint">Gespeicherte Fundorte</div>
     </div>
     <div class="panel stat">
-      <div class="label">🎃 Normale Kürbisse</div>
-      <strong id="normalCount" class="orangetext">0</strong>
+      <span>🎃 Normale Kürbisse</span>
+      <strong id="normalCount" class="orange">0</strong>
       <div class="hint">Standard-Spots</div>
     </div>
     <div class="panel stat">
-      <div class="label">🌟 Goldene Kürbisse</div>
+      <span>🌟 Goldene Kürbisse</span>
       <strong id="goldCount" class="goldtext">0</strong>
       <div class="hint">Seltene Spots</div>
     </div>
     <div class="panel stat">
-      <div class="label">Noch offen</div>
+      <span>Noch offen</span>
       <strong id="openCount">0</strong>
-      <div class="hint">Offen oder zu prüfen</div>
+      <div class="hint">Nicht gesammelt</div>
     </div>
     <div class="panel stat">
-      <div class="label">Gesammelt</div>
+      <span>Gesammelt</span>
       <strong id="doneCount">0</strong>
-      <div class="hint" id="progress">0% abgeschlossen</div>
+      <div id="progressText" class="hint">0% abgeschlossen</div>
     </div>
   </section>
 
   <div class="tools">
-    <input id="search" class="control search" placeholder="🔎 Spots, Gebiete oder Notizen suchen...">
+    <input id="search" class="control search" placeholder="🔎 Spots, Gebiete oder Hinweise suchen ...">
+
     <select id="typeFilter" class="control">
       <option value="all">Alle Kürbisse</option>
       <option value="normal">🎃 Normale</option>
       <option value="gold">🌟 Goldene</option>
     </select>
+
     <select id="statusFilter" class="control">
       <option value="all">Alle Status</option>
       <option value="open">Offen</option>
       <option value="check">Zu prüfen</option>
       <option value="done">Gesammelt</option>
     </select>
+
     <select id="sort" class="control">
       <option value="new">Neueste zuerst</option>
       <option value="old">Älteste zuerst</option>
@@ -451,34 +427,38 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
       <option value="area">Gebiet A–Z</option>
       <option value="gold">Goldene zuerst</option>
     </select>
-    <button id="export" class="btn small">↓ Backup</button>
-    <button id="import" class="btn small">↑ Import</button>
+
+    <button id="export" class="small">↓ Backup</button>
+    <button id="import" class="small">↑ Import</button>
     <input id="importFile" type="file" accept=".json,application/json" class="hidden">
   </div>
 
   <section id="spotGrid" class="grid"></section>
+
+  <h2 class="sectiontitle">↺ Vergangene Halloween-Nächte</h2>
+  <div id="history" class="panel history"></div>
 </main>
 
 <div id="modalbg" class="modalbg hidden">
   <div class="panel modal">
     <div class="modalhead">
       <h2 id="modalTitle">Neuen Spot erstellen</h2>
-      <button id="close" class="btn small">✕</button>
+      <button id="close" class="small" type="button">✕</button>
     </div>
 
     <form id="spotForm" class="form">
       <div class="field">
         <label>Kürbis-Typ</label>
-        <div class="typechoices">
-          <label class="typechoice">
+        <div class="types">
+          <label class="type">
             <input type="radio" name="pumpkinType" value="normal" checked>
             <span>🎃</span>
-            <div>Normal<br><small class="muted">Orange</small></div>
+            <div>Normal<div class="hint">Orange</div></div>
           </label>
-          <label class="typechoice gold">
+          <label class="type gold">
             <input type="radio" name="pumpkinType" value="gold">
             <span>🌟</span>
-            <div>Golden<br><small class="muted">Selten</small></div>
+            <div>Golden<div class="hint">Selten</div></div>
           </label>
         </div>
       </div>
@@ -496,9 +476,9 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
       <div class="field">
         <label for="status">Status</label>
         <select id="status">
-          <option value="open">🟢 Offen</option>
+          <option value="open">🟠 Offen</option>
           <option value="check">🔵 Zu prüfen</option>
-          <option value="done">🟠 Gesammelt</option>
+          <option value="done">🟢 Gesammelt</option>
         </select>
       </div>
 
@@ -512,14 +492,14 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
         <div class="upload">
           <input id="spotImage" type="file" accept="image/png,image/jpeg,image/webp">
           <div class="hint">JPG, PNG oder WebP · maximal 10 MB · wird verkleinert</div>
-          <img id="imagePreview" class="preview hidden" alt="Bildvorschau">
-          <button type="button" id="removeImage" class="btn small hidden">Bild entfernen</button>
+          <img id="imagePreview" class="preview hidden" alt="Screenshot-Vorschau">
+          <button id="removeImage" type="button" class="small hidden">Bild entfernen</button>
         </div>
       </div>
 
       <div id="spotError" class="message hidden"></div>
-      <button id="saveSpot" class="btn primary">Spot speichern</button>
-      <button type="button" id="cancel" class="btn">Abbrechen</button>
+      <button id="saveSpot" class="primary">Spot speichern</button>
+      <button id="cancel" type="button">Abbrechen</button>
     </form>
   </div>
 </div>
@@ -527,40 +507,63 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 <footer class="footer">PUMPKIN TRACKER © 2026 · CREW HQ</footer>
 
 <script>
-// Nur öffentliche Supabase-Daten eintragen!
-window.PUMPKIN_CONFIG = {
-  supabaseUrl: '',
-  publishableKey: ''
-};
-</script>
-
-<script>
 'use strict';
 
+// DEINE SUPABASE-DATEN SIND BEREITS EINGETRAGEN
+window.PUMPKIN_CONFIG = {
+  supabaseUrl: 'https://prjhayxvzhnwthxybwkt.supabase.co',
+  publishableKey: 'sb_publishable_lUPW975DuUauZf8wZrPCAA_XhKUGm4M'
+};
+
 const $ = id => document.getElementById(id);
-const KEY = 'pumpkin-tracker-v3';
-const OLD = 'pumpkin-tracker-preview-v1';
+const SPOTS_KEY = 'pumpkin-tracker-v3';
+const NIGHT_KEY = 'pumpkin-tracker-night-v4';
+const HISTORY_KEY = 'pumpkin-tracker-history-v4';
+const FOUR_HOURS = 4 * 60 * 60 * 1000;
+
 let spots = [];
+let night = null;
+let history = [];
 let mode = 'login';
 let editId = null;
 let photo = null;
+let photoRequest = 0;
 
-function notice(id, text, good = false) {
+function readJSON(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw === null ? fallback : JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+}
+
+function saveJSON(key, data) {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+    return true;
+  } catch {
+    alert('Der Browser-Speicher ist voll. Bitte erst ein Backup erstellen.');
+    return false;
+  }
+}
+
+function message(id, text, good = false) {
   const el = $(id);
   el.textContent = text;
   el.className = 'message' + (good ? ' good' : '');
 }
 
-function setTab(value) {
-  mode = value;
-  $('tabLogin').classList.toggle('active', value === 'login');
-  $('tabRegister').classList.toggle('active', value === 'register');
-  $('inviteWrap').classList.toggle('hidden', value !== 'register');
-  $('invite').required = value === 'register';
-  $('authTitle').textContent = value === 'login'
+function setTab(next) {
+  mode = next;
+  $('tabLogin').classList.toggle('active', next === 'login');
+  $('tabRegister').classList.toggle('active', next === 'register');
+  $('inviteWrap').classList.toggle('hidden', next !== 'register');
+  $('invite').required = next === 'register';
+  $('authTitle').textContent = next === 'login'
     ? 'Willkommen zurück.'
     : 'Join the crew.';
-  $('authButton').textContent = value === 'login'
+  $('authButton').textContent = next === 'login'
     ? 'Anmelden →'
     : 'Registrieren →';
   $('authMessage').classList.add('hidden');
@@ -571,58 +574,70 @@ $('tabRegister').onclick = () => setTab('register');
 
 $('authForm').onsubmit = async e => {
   e.preventDefault();
+
   const username = $('username').value.trim();
   const password = $('password').value;
   const inviteCode = $('invite').value.trim();
 
   if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
-    notice('authMessage', 'Benutzername: 3–20 Zeichen, nur Buchstaben, Zahlen und _.');
+    message('authMessage',
+      'Benutzername: 3–20 Zeichen, nur Buchstaben, Zahlen und _.');
     return;
   }
 
   if (mode === 'login') {
-    notice('authMessage', 'Der echte Login wird noch in Supabase ergänzt. Nutze bis dahin die Dashboard-Vorschau.');
+    message('authMessage',
+      'Der echte Login-Endpunkt ist noch nicht fertig. Du kannst die Dashboard-Vorschau bereits nutzen.');
     return;
   }
 
-  const config = window.PUMPKIN_CONFIG;
-  if (!config.supabaseUrl || !config.publishableKey) {
-    notice('authMessage', 'Bitte Supabase URL und Publishable Key eintragen.');
-    return;
-  }
-
-  const button = $('authButton');
-  button.disabled = true;
+  const btn = $('authButton');
+  btn.disabled = true;
 
   try {
+    const config = window.PUMPKIN_CONFIG;
+
     const response = await fetch(
-      config.supabaseUrl.replace(/\/$/, '') + '/functions/v1/pumpkin-auth',
+      config.supabaseUrl + '/functions/v1/pumpkin-auth',
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': config.publishableKey
+          apikey: config.publishableKey
         },
-        body: JSON.stringify({username, password, inviteCode})
+        body: JSON.stringify({
+          username,
+          password,
+          inviteCode
+        })
       }
     );
+
     const result = await response.json().catch(() => ({}));
+
     if (!response.ok || !result.success) {
       throw new Error(result.error || 'Registrierung fehlgeschlagen.');
     }
-    notice('authMessage', 'Registrierung gemeldet. Die sichere Code-Einlösung und der Login müssen noch fertiggestellt werden.', true);
+
+    message(
+      'authMessage',
+      'Account erstellt. Der echte Login und die gemeinsame Datenspeicherung müssen noch fertiggestellt werden.',
+      true
+    );
+
     $('password').value = '';
     $('invite').value = '';
   } catch (error) {
-    notice('authMessage', error.message || 'Verbindung fehlgeschlagen.');
+    message('authMessage',
+      error.message || 'Verbindung zu Supabase fehlgeschlagen.');
   } finally {
-    button.disabled = false;
-    button.textContent = 'Registrieren →';
+    btn.disabled = false;
   }
 };
 
 function cleanSpot(s) {
   if (!s || typeof s.name !== 'string') return null;
+
   return {
     id: typeof s.id === 'string' ? s.id : crypto.randomUUID(),
     name: s.name.slice(0,65),
@@ -630,92 +645,235 @@ function cleanSpot(s) {
     notes: String(s.notes || s.note || '').slice(0,1000),
     type: s.type === 'gold' ? 'gold' : 'normal',
     status: ['open','check','done'].includes(s.status)
-      ? s.status : (s.collected ? 'done' : 'open'),
-    image: typeof s.image === 'string' &&
+      ? s.status
+      : (s.collected ? 'done' : 'open'),
+    image:
+      typeof s.image === 'string' &&
       /^data:image\/(jpeg|png|webp);base64,/.test(s.image) &&
-      s.image.length < 1300000 ? s.image : null,
-    created: Number.isFinite(s.created) ? s.created : Date.now()
+      s.image.length < 1300000
+        ? s.image
+        : null,
+    created: Number.isFinite(s.created)
+      ? s.created
+      : Date.now()
   };
 }
 
-function load() {
+function loadData() {
+  const raw =
+    localStorage.getItem(SPOTS_KEY) ||
+    localStorage.getItem('pumpkin-tracker-v2') ||
+    localStorage.getItem('pumpkin-tracker-preview-v1') ||
+    '[]';
+
   try {
-    const raw = localStorage.getItem(KEY)
-      || localStorage.getItem('pumpkin-tracker-v2')
-      || localStorage.getItem(OLD)
-      || '[]';
-    const data = JSON.parse(raw);
-    spots = Array.isArray(data)
-      ? data.map(cleanSpot).filter(Boolean).slice(0,300)
+    const parsed = JSON.parse(raw);
+    spots = Array.isArray(parsed)
+      ? parsed.map(cleanSpot).filter(Boolean).slice(0,300)
       : [];
   } catch {
     spots = [];
   }
+
+  const savedNight = readJSON(NIGHT_KEY,null);
+  night =
+    savedNight &&
+    Number.isFinite(savedNight.started) &&
+    Number.isFinite(savedNight.ends) &&
+    savedNight.ends > savedNight.started
+      ? savedNight
+      : null;
+
+  const savedHistory = readJSON(HISTORY_KEY,[]);
+  history = Array.isArray(savedHistory)
+    ? savedHistory.slice(0,50)
+    : [];
+
+  checkNightEnd();
 }
 
-function persist() {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(spots));
-    return true;
-  } catch {
-    alert('Speicher voll! Bitte Bilder verkleinern oder ein Backup erstellen.');
-    return false;
-  }
+function saveSpots() {
+  return saveJSON(SPOTS_KEY,spots);
 }
 
 function showApp() {
-  load();
+  loadData();
   $('auth').classList.add('hidden');
   $('app').classList.remove('hidden');
   $('logout').classList.remove('hidden');
   render();
+  updateNight();
 }
 
 $('previewMode').onclick = showApp;
+
 $('logout').onclick = () => {
   $('app').classList.add('hidden');
   $('auth').classList.remove('hidden');
   $('logout').classList.add('hidden');
 };
 
-const statusLabels = {
-  open: '● Offen',
-  check: '● Zu prüfen',
-  done: '✓ Gesammelt'
+function countDone() {
+  return spots.filter(s => s.status === 'done').length;
+}
+
+function checkNightEnd() {
+  if (!night || Date.now() < night.ends) return;
+
+  const completed = {
+    id: night.id,
+    started: night.started,
+    ended: night.ends,
+    startedBy: night.startedBy || 'Crew-Mitglied',
+    total: spots.length,
+    normal: spots.filter(
+      s => s.status === 'done' && s.type === 'normal'
+    ).length,
+    gold: spots.filter(
+      s => s.status === 'done' && s.type === 'gold'
+    ).length
+  };
+
+  // Erst den Rundenverlauf sichern.
+  const nextHistory = [completed,...history].slice(0,50);
+  if (!saveJSON(HISTORY_KEY,nextHistory)) return;
+
+  history = nextHistory;
+
+  // Standorte und Bilder bleiben vollständig erhalten.
+  // Nur "Gesammelt" wird auf "Offen" gesetzt.
+  const previous = spots.map(s => ({...s}));
+
+  spots = spots.map(s => ({
+    ...s,
+    status: s.status === 'done' ? 'open' : s.status
+  }));
+
+  if (!saveSpots()) {
+    spots = previous;
+    return;
+  }
+
+  night = null;
+  localStorage.removeItem(NIGHT_KEY);
+}
+
+function startNight() {
+  checkNightEnd();
+
+  if (night) {
+    alert('Es läuft bereits eine Halloween-Nacht.');
+    return;
+  }
+
+  if (!confirm(
+    'Neue Halloween-Nacht starten? Die Suchphase dauert genau 4 Stunden.'
+  )) return;
+
+  const started = Date.now();
+
+  const newNight = {
+    id: crypto.randomUUID(),
+    started,
+    ends: started + FOUR_HOURS,
+    startedBy: 'Crew-Mitglied'
+  };
+
+  if (!saveJSON(NIGHT_KEY,newNight)) return;
+
+  night = newNight;
+  updateNight();
+  render();
+}
+
+$('startNight').onclick = startNight;
+
+function formatTime(ms) {
+  const seconds = Math.max(0,Math.ceil(ms / 1000));
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+
+  return [h,m,s].map(n => String(n).padStart(2,'0')).join(':');
+}
+
+function updateNight() {
+  if (night && Date.now() >= night.ends) {
+    checkNightEnd();
+    render();
+  }
+
+  const active = Boolean(night);
+  $('nightPanel').classList.toggle('active',active);
+  $('nightBadge').textContent = active
+    ? '● RUNDE AKTIV'
+    : '● KEINE AKTIVE RUNDE';
+
+  $('nightTimer').textContent = active
+    ? formatTime(night.ends - Date.now())
+    : '04:00:00';
+
+  $('nightDescription').textContent = active
+    ? 'Die Halloween-Nacht läuft. Viel Erfolg bei der Kürbissuche!'
+    : 'Starte eine neue Suchphase. Jede Runde dauert genau vier Stunden.';
+
+  $('nightInfo').textContent = active
+    ? 'Endet am ' + new Date(night.ends).toLocaleString('de-DE')
+    : 'Nach Ablauf werden alle gesammelten Kürbisse zurückgesetzt.';
+
+  $('nightProgress').style.width = active
+    ? Math.min(
+        100,
+        Math.max(0,(Date.now() - night.started) / FOUR_HOURS * 100)
+      ) + '%'
+    : '0%';
+
+  $('startNight').disabled = active;
+  $('startNight').textContent = active
+    ? '✓ Halloween-Nacht läuft'
+    : '▶ Halloween-Nacht starten';
+}
+
+const labels = {
+  open:'● Offen',
+  check:'● Zu prüfen',
+  done:'✓ Gesammelt'
 };
 
 function render() {
   const total = spots.length;
-  const normal = spots.filter(s => s.type === 'normal').length;
-  const gold = spots.filter(s => s.type === 'gold').length;
-  const done = spots.filter(s => s.status === 'done').length;
+  const done = countDone();
 
   $('total').textContent = total;
-  $('normalCount').textContent = normal;
-  $('goldCount').textContent = gold;
+  $('normalCount').textContent =
+    spots.filter(s => s.type === 'normal').length;
+  $('goldCount').textContent =
+    spots.filter(s => s.type === 'gold').length;
   $('openCount').textContent = total - done;
   $('doneCount').textContent = done;
-  $('progress').textContent =
-    (total ? Math.round(done / total * 100) : 0) + '% abgeschlossen';
+  $('progressText').textContent =
+    (total ? Math.round(done / total * 100) : 0) +
+    '% abgeschlossen';
 
-  const query = $('search').value.toLowerCase().trim();
-  const typeFilter = $('typeFilter').value;
-  const statusFilter = $('statusFilter').value;
+  const query = $('search').value.trim().toLowerCase();
+  const type = $('typeFilter').value;
+  const status = $('statusFilter').value;
   const sort = $('sort').value;
 
-  const data = spots.filter(s => {
-    const matchesText = [s.name,s.area,s.notes]
-      .some(v => v.toLowerCase().includes(query));
-    const matchesType = typeFilter === 'all' || s.type === typeFilter;
-    const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
-    return matchesText && matchesType && matchesStatus;
-  });
+  const data = spots.filter(s =>
+    [s.name,s.area,s.notes].some(
+      v => v.toLowerCase().includes(query)
+    ) &&
+    (type === 'all' || s.type === type) &&
+    (status === 'all' || s.status === status)
+  );
 
   data.sort((a,b) => {
     if (sort === 'old') return a.created - b.created;
     if (sort === 'name') return a.name.localeCompare(b.name,'de');
     if (sort === 'area') return a.area.localeCompare(b.area,'de');
-    if (sort === 'gold') return (b.type === 'gold') - (a.type === 'gold');
+    if (sort === 'gold') return Number(b.type === 'gold') -
+      Number(a.type === 'gold');
     return b.created - a.created;
   });
 
@@ -727,12 +885,12 @@ function render() {
     empty.className = 'empty';
     empty.textContent = '🎃 Keine Spots gefunden. Erstelle deinen ersten Spot!';
     grid.append(empty);
-    return;
   }
 
   for (const spot of data) {
     const card = document.createElement('article');
-    card.className = 'panel spot' + (spot.type === 'gold' ? ' gold' : '');
+    card.className = 'panel spot' +
+      (spot.type === 'gold' ? ' gold' : '');
 
     const cover = document.createElement('div');
     cover.className = 'cover';
@@ -740,27 +898,28 @@ function render() {
     if (spot.image) {
       const img = document.createElement('img');
       img.src = spot.image;
-      img.alt = 'Screenshot: ' + spot.name;
+      img.alt = 'Screenshot von ' + spot.name;
       img.loading = 'lazy';
       cover.append(img);
     } else {
-      const icon = document.createElement('div');
-      icon.className = 'fallback';
-      icon.textContent = spot.type === 'gold' ? '🌟' : '🎃';
-      cover.append(icon);
+      const emoji = document.createElement('div');
+      emoji.className = 'emoji';
+      emoji.textContent = spot.type === 'gold' ? '🌟' : '🎃';
+      cover.append(emoji);
     }
 
     const marker = document.createElement('span');
-    marker.className = 'marker ' + spot.type;
+    marker.className = 'marker' +
+      (spot.type === 'gold' ? ' gold' : '');
     marker.textContent = spot.type === 'gold'
       ? '🌟 GOLDEN'
       : '🎃 NORMAL';
 
-    const status = document.createElement('span');
-    status.className = 'status ' + spot.status;
-    status.textContent = statusLabels[spot.status];
+    const badge = document.createElement('span');
+    badge.className = 'statusbadge ' + spot.status;
+    badge.textContent = labels[spot.status];
 
-    cover.append(marker,status);
+    cover.append(marker,badge);
 
     const body = document.createElement('div');
     body.className = 'spotbody';
@@ -768,51 +927,89 @@ function render() {
     const title = document.createElement('h3');
     title.textContent = spot.name;
 
-    const meta = document.createElement('div');
-    meta.className = 'spotmeta';
-    meta.textContent = '📍 ' + spot.area;
+    const area = document.createElement('div');
+    area.className = 'area';
+    area.textContent = '📍 ' + spot.area;
 
     const notes = document.createElement('p');
-    notes.textContent = spot.notes || 'Keine Beschreibung hinterlegt.';
+    notes.textContent = spot.notes ||
+      'Keine Beschreibung hinterlegt.';
 
     const actions = document.createElement('div');
     actions.className = 'actions';
 
     const toggle = document.createElement('button');
-    toggle.className = 'btn small';
+    toggle.className = 'small';
     toggle.textContent = spot.status === 'done'
       ? '↩ Öffnen'
       : '✓ Gesammelt';
 
     toggle.onclick = () => {
+      checkNightEnd();
       const previous = spot.status;
       spot.status = previous === 'done' ? 'open' : 'done';
-      if (!persist()) spot.status = previous;
+      if (!saveSpots()) spot.status = previous;
       render();
     };
 
     const edit = document.createElement('button');
-    edit.className = 'btn small';
+    edit.className = 'small';
     edit.textContent = '✎ Bearbeiten';
     edit.onclick = () => openModal(spot.id);
 
     const del = document.createElement('button');
-    del.className = 'btn small danger';
+    del.className = 'small danger';
     del.textContent = '✕';
     del.title = 'Spot löschen';
 
     del.onclick = () => {
-      if (!confirm('Spot "' + spot.name + '" wirklich löschen?')) return;
+      if (!confirm(
+        'Spot "' + spot.name + '" wirklich löschen?'
+      )) return;
+
       const previous = spots;
       spots = spots.filter(s => s.id !== spot.id);
-      if (!persist()) spots = previous;
+
+      if (!saveSpots()) spots = previous;
       render();
     };
 
     actions.append(toggle,edit,del);
-    body.append(title,meta,notes,actions);
+    body.append(title,area,notes,actions);
     card.append(cover,body);
     grid.append(card);
+  }
+
+  renderHistory();
+}
+
+function renderHistory() {
+  const box = $('history');
+  box.replaceChildren();
+
+  if (!history.length) {
+    const row = document.createElement('div');
+    row.className = 'historyrow muted';
+    row.textContent = 'Noch keine abgeschlossenen Halloween-Nächte.';
+    box.append(row);
+    return;
+  }
+
+  for (const entry of history) {
+    const row = document.createElement('div');
+    row.className = 'historyrow';
+
+    const left = document.createElement('div');
+    left.textContent = '🌙 ' +
+      new Date(entry.started).toLocaleString('de-DE');
+
+    const right = document.createElement('strong');
+    right.textContent =
+      '🎃 ' + (entry.normal || 0) +
+      ' · 🌟 ' + (entry.gold || 0);
+
+    row.append(left,right);
+    box.append(row);
   }
 }
 
@@ -823,9 +1020,18 @@ function render() {
   );
 });
 
+function updatePhoto() {
+  $('imagePreview').classList.toggle('hidden',!photo);
+  $('removeImage').classList.toggle('hidden',!photo);
+
+  if (photo) $('imagePreview').src = photo;
+  else $('imagePreview').removeAttribute('src');
+}
+
 function openModal(id = null) {
   editId = id;
   const spot = spots.find(s => s.id === id);
+
   $('spotForm').reset();
   $('spotError').classList.add('hidden');
   $('modalTitle').textContent = spot
@@ -837,9 +1043,9 @@ function openModal(id = null) {
   $('status').value = spot?.status || 'open';
   $('spotNotes').value = spot?.notes || '';
 
-  const type = spot?.type || 'normal';
   document.querySelector(
-    'input[name="pumpkinType"][value="' + type + '"]'
+    'input[name="pumpkinType"][value="' +
+    (spot?.type || 'normal') + '"]'
   ).checked = true;
 
   photo = spot?.image || null;
@@ -848,26 +1054,24 @@ function openModal(id = null) {
 }
 
 function closeModal() {
+  photoRequest++;
   $('modalbg').classList.add('hidden');
   editId = null;
   photo = null;
-}
-
-function updatePhoto() {
-  $('imagePreview').classList.toggle('hidden', !photo);
-  $('removeImage').classList.toggle('hidden', !photo);
-  if (photo) $('imagePreview').src = photo;
-  else $('imagePreview').removeAttribute('src');
+  $('spotImage').value = '';
+  $('saveSpot').disabled = false;
 }
 
 $('add').onclick = () => openModal();
 $('close').onclick = closeModal;
 $('cancel').onclick = closeModal;
+
 $('modalbg').onclick = e => {
   if (e.target === $('modalbg')) closeModal();
 };
 
 $('removeImage').onclick = () => {
+  photoRequest++;
   photo = null;
   $('spotImage').value = '';
   updatePhoto();
@@ -875,6 +1079,11 @@ $('removeImage').onclick = () => {
 
 function compress(file) {
   return new Promise((resolve,reject) => {
+    if (!['image/png','image/jpeg','image/webp'].includes(file.type)) {
+      reject(Error('Bitte ein JPG-, PNG- oder WebP-Bild wählen.'));
+      return;
+    }
+
     if (file.size > 10 * 1024 * 1024) {
       reject(Error('Bild ist größer als 10 MB.'));
       return;
@@ -885,10 +1094,18 @@ function compress(file) {
 
     img.onload = () => {
       try {
-        const scale = Math.min(1,1000 / Math.max(img.width,img.height));
+        const scale = Math.min(
+          1,1000 / Math.max(img.width,img.height)
+        );
+
         const canvas = document.createElement('canvas');
-        canvas.width = Math.max(1,Math.round(img.width * scale));
-        canvas.height = Math.max(1,Math.round(img.height * scale));
+        canvas.width = Math.max(
+          1,Math.round(img.width * scale)
+        );
+        canvas.height = Math.max(
+          1,Math.round(img.height * scale)
+        );
+
         canvas.getContext('2d').drawImage(
           img,0,0,canvas.width,canvas.height
         );
@@ -897,7 +1114,7 @@ function compress(file) {
         URL.revokeObjectURL(url);
 
         if (result.length > 1100000) {
-          reject(Error('Bild ist nach dem Verkleinern noch zu groß.'));
+          reject(Error('Das verkleinerte Bild ist noch zu groß.'));
         } else {
           resolve(result);
         }
@@ -911,6 +1128,7 @@ function compress(file) {
       URL.revokeObjectURL(url);
       reject(Error('Bild konnte nicht geöffnet werden.'));
     };
+
     img.src = url;
   });
 }
@@ -919,23 +1137,31 @@ $('spotImage').onchange = async e => {
   const file = e.target.files?.[0];
   if (!file) return;
 
+  const request = ++photoRequest;
   const previous = photo;
   $('saveSpot').disabled = true;
 
   try {
-    photo = await compress(file);
+    const result = await compress(file);
+    if (request !== photoRequest) return;
+
+    photo = result;
     updatePhoto();
     $('spotError').classList.add('hidden');
   } catch (error) {
+    if (request !== photoRequest) return;
     photo = previous;
-    notice('spotError',error.message);
+    message('spotError',error.message);
   } finally {
-    $('saveSpot').disabled = false;
+    if (request === photoRequest) {
+      $('saveSpot').disabled = false;
+    }
   }
 };
 
 $('spotForm').onsubmit = e => {
   e.preventDefault();
+  checkNightEnd();
 
   const name = $('spotName').value.trim();
   const area = $('area').value.trim();
@@ -946,7 +1172,7 @@ $('spotForm').onsubmit = e => {
   ).value;
 
   if (!name || !area) {
-    notice('spotError','Name und Gebiet sind erforderlich.');
+    message('spotError','Name und Gebiet sind erforderlich.');
     return;
   }
 
@@ -957,16 +1183,18 @@ $('spotForm').onsubmit = e => {
     s.type === type
   );
 
-  if (duplicate && !confirm('Dieser Spot existiert bereits. Trotzdem speichern?')) {
-    return;
-  }
+  if (duplicate && !confirm(
+    'Dieser Spot existiert bereits. Trotzdem speichern?'
+  )) return;
 
   const previous = spots.map(s => ({...s}));
 
   if (editId) {
     const spot = spots.find(s => s.id === editId);
     if (!spot) return;
-    Object.assign(spot,{name,area,notes,status,type,image:photo});
+    Object.assign(spot,{
+      name,area,notes,status,type,image:photo
+    });
   } else {
     spots.unshift({
       id:crypto.randomUUID(),
@@ -976,7 +1204,7 @@ $('spotForm').onsubmit = e => {
     });
   }
 
-  if (!persist()) {
+  if (!saveSpots()) {
     spots = previous;
     return;
   }
@@ -988,9 +1216,11 @@ $('spotForm').onsubmit = e => {
 $('export').onclick = () => {
   const backup = {
     app:'pumpkin-tracker',
-    version:3,
+    version:4,
     exportedAt:new Date().toISOString(),
-    spots
+    spots,
+    night,
+    history
   };
 
   const blob = new Blob(
@@ -999,13 +1229,15 @@ $('export').onclick = () => {
   );
 
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'pumpkin-backup-' +
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'pumpkin-backup-' +
     new Date().toISOString().slice(0,10) + '.json';
-  document.body.append(a);
-  a.click();
-  a.remove();
+
+  document.body.append(link);
+  link.click();
+  link.remove();
+
   setTimeout(() => URL.revokeObjectURL(url),2000);
 };
 
@@ -1021,6 +1253,7 @@ $('importFile').onchange = async e => {
     }
 
     const parsed = JSON.parse(await file.text());
+
     if (
       parsed.app !== 'pumpkin-tracker' ||
       !Array.isArray(parsed.spots)
@@ -1033,7 +1266,9 @@ $('importFile').onchange = async e => {
       .map(cleanSpot)
       .filter(Boolean);
 
-    if (!confirm(incoming.length + ' Spots importieren?')) return;
+    if (!confirm(
+      incoming.length + ' Spots importieren?'
+    )) return;
 
     const previous = spots;
     const ids = new Set(spots.map(s => s.id));
@@ -1043,7 +1278,7 @@ $('importFile').onchange = async e => {
       ...incoming.filter(s => !ids.has(s.id))
     ].slice(0,300);
 
-    if (!persist()) spots = previous;
+    if (!saveSpots()) spots = previous;
     render();
   } catch (error) {
     alert(error.message || 'Import fehlgeschlagen.');
@@ -1053,11 +1288,21 @@ $('importFile').onchange = async e => {
 };
 
 document.addEventListener('keydown',e => {
-  if (e.key === 'Escape' &&
-      !$('modalbg').classList.contains('hidden')) {
+  if (
+    e.key === 'Escape' &&
+    !$('modalbg').classList.contains('hidden')
+  ) {
     closeModal();
   }
 });
+
+// Countdown aktualisiert sich jede Sekunde.
+// Der Ablauf wird zusätzlich beim Laden geprüft.
+setInterval(() => {
+  if (!$('app').classList.contains('hidden')) {
+    updateNight();
+  }
+},1000);
 </script>
 </body>
 </html>
