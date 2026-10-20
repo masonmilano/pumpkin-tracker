@@ -385,9 +385,9 @@ h1{letter-spacing:-1.3px}
 
     <div class="night-bottom">
       <div id="nightInfo" class="hint">
-        Alle gesammelten Kürbisse werden nach Ablauf zurückgesetzt.
+        Normal: jederzeit sammelbar · Golden: nur während Halloween-Nacht. Reset um 03:00, 12:00 und 19:00 Uhr.
       </div>
-      <button id="startNight" class="primary">▶ Halloween-Nacht starten</button>
+      <div style="display:flex;gap:9px;flex-wrap:wrap"><button id="startNight" class="primary">▶ Halloween-Nacht starten</button><button id="stopNight" class="danger hidden" type="button">■ Nacht beenden</button></div>
     </div>
   </section>
 
@@ -553,7 +553,7 @@ const $=id=>document.getElementById(id);
 const supa=window.supabase?.createClient(CFG.url,CFG.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
 const MAPS={'los-santos':{name:'Los Santos',src:'los-santos.png'},'roxwood':{name:'Roxwood',src:'roxwood.png'},'cayo-perico':{name:'Cayo Perico',src:'cayo-perico.png'},'galapagos':{name:'Galapagos',src:'galapagos.png'}};
 const labels={open:'● Offen',done:'✓ Gesammelt'};
-let user=null,isAdmin=false,spots=[],rounds=[],collections=new Set(),round=null,activeMap='los-santos';
+let user=null,isAdmin=false,spots=[],rounds=[],collections=new Set(),round=null,cycleStart=null,activeMap='los-santos';
 let mapInstance=null,mapOverlay=null,mapLayer=null,mapBounds=null,mapW=1,mapH=1,mapToken=0;
 let editId=null,pendingPosition=null,photo=null,photoRequest=0,authBusy=false,busy=false,loading=false,mode='login';
 const timeString=n=>{const s=Math.max(0,Math.ceil(n/1000));return [Math.floor(s/3600),Math.floor((s%3600)/60),s%60].map(x=>String(x).padStart(2,'0')).join(':')};
@@ -566,14 +566,93 @@ async function loginView(next){if(!next?.id)return;let changed=user?.id!==next.i
 async function initAuth(){if(!supa){showMessage('authMessage','Supabase konnte nicht geladen werden.');return}const {data,error}=await supa.auth.getUser();if(!error&&data.user)await loginView(data.user);else logoutView();supa.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT')logoutView()})}
 $('authForm').onsubmit=async e=>{e.preventDefault();if(authBusy||!supa)return;const username=$('username').value.trim(),password=$('password').value,inviteCode=$('invite').value.trim(),action=mode;if(!/^[a-zA-Z0-9_]{3,20}$/.test(username)){showMessage('authMessage','Benutzername: 3–20 Zeichen (Buchstaben, Zahlen, _).');return}if(password.length<8||password.length>128){showMessage('authMessage','Passwort muss 8–128 Zeichen haben.');return}if(action==='register'&&(inviteCode.length<8||inviteCode.length>256)){showMessage('authMessage','Ungültiger Einladungscode.');return}authBusy=true;$('authButton').disabled=true;try{const response=await fetch(CFG.url+'/functions/v1/pumpkin-auth',{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.key},body:JSON.stringify({action,username,password,inviteCode})});const result=await response.json().catch(()=>({}));if(!response.ok||!result.success)throw Error(result.error||'Anfrage fehlgeschlagen');if(action==='register'){$('password').value='';$('invite').value='';setTab('login');$('username').value=username;showMessage('authMessage','Registriert! Melde dich jetzt an.',true);return}if(!result.session?.access_token||!result.session?.refresh_token)throw Error('Die Anmeldung hat keine Sitzung zurückgegeben.');const {data,error}=await supa.auth.setSession({access_token:result.session.access_token,refresh_token:result.session.refresh_token});if(error||!data.user)throw Error('Sitzung konnte nicht gespeichert werden.');$('password').value='';await loginView(data.user)}catch(error){showMessage('authMessage',errorText(error))}finally{authBusy=false;$('authButton').disabled=false;$('authButton').textContent=mode==='login'?'Anmelden →':'Registrieren →'}};
 $('logout').onclick=async()=>{try{const {error}=await supa.auth.signOut({scope:'local'});if(error)throw error;logoutView()}catch(e){alert('Abmelden fehlgeschlagen: '+errorText(e))}};
+function isActiveNight(){return !!round && !round.stopped_at && Date.parse(round.started_at)<=Date.now() && Date.parse(round.ends_at)>Date.now()}
+function canCollect(spot){return spot.type==='normal'||isActiveNight()}
 function spotFromDB(s){return{id:s.id,name:s.name,area:s.area,notes:s.notes||'',type:s.type,mapId:s.map_id,x:s.x,y:s.y,image:s.image,created:Date.parse(s.created_at)||Date.now(),status:collections.has(s.id)?'done':'open'}}
-async function refreshAll(){if(!user||loading)return;loading=true;try{const [a,b,c,d]=await Promise.all([supa.from('pumpkin_admins').select('user_id').eq('user_id',user.id).maybeSingle(),supa.from('pumpkin_spots').select('*').order('created_at',{ascending:false}).limit(1000),supa.from('pumpkin_rounds').select('*').order('started_at',{ascending:false}).limit(60),supa.from('profiles').select('username').eq('id',user.id).maybeSingle()]);for(const result of [a,b,c,d])if(result.error)throw result.error;isAdmin=!!a.data;const name=d.data?.username||'Crew-Mitglied';$('crewName').textContent=(isAdmin?'🛡️ Admin: ':'👤 ')+name;rounds=c.data||[];round=rounds.find(r=>Date.parse(r.started_at)<=Date.now()&&Date.parse(r.ends_at)>Date.now())||null;const coll=round?await supa.from('pumpkin_collections').select('spot_id').eq('round_id',round.id).eq('user_id',user.id):{data:[],error:null};if(coll.error)throw coll.error;collections=new Set((coll.data||[]).map(x=>x.spot_id));spots=(b.data||[]).map(spotFromDB);$('add').classList.toggle('hidden',!isAdmin);$('startNight').classList.toggle('hidden',!isAdmin);$('import').classList.toggle('hidden',!isAdmin);$('mapHelpAdmin').textContent=isAdmin?'Als Admin kannst du auf die Karte klicken, um neue Marker zu setzen.':'Marker anklicken, um Details zu sehen und eigene Kürbisse abzuhaken.';render();updateNight()}catch(e){showMessage('syncError','Synchronisierung fehlgeschlagen: '+errorText(e));$('syncError').classList.remove('hidden')}finally{loading=false}}
-async function refreshNight(){if(!user)return;const {data,error}=await supa.from('pumpkin_rounds').select('*').order('started_at',{ascending:false}).limit(60);if(error)return;const previous=round?.id||null;rounds=data||[];round=rounds.find(r=>Date.parse(r.started_at)<=Date.now()&&Date.parse(r.ends_at)>Date.now())||null;if(previous!==round?.id)await refreshAll();else{updateNight();renderHistory()}}
-async function startNight(){if(!user||!isAdmin||busy)return;if(!confirm('Halloween-Nacht jetzt für ALLE 4 Stunden starten?'))return;busy=true;try{const {error}=await supa.rpc('start_pumpkin_round');if(error)throw error;await refreshAll()}catch(e){alert('Start fehlgeschlagen: '+errorText(e))}finally{busy=false}}$('startNight').onclick=startNight;
-function updateNight(){const active=!!round&&Date.parse(round.ends_at)>Date.now();$('nightPanel').classList.toggle('active',active);$('nightBadge').textContent=active?'● RUNDE AKTIV':'● KEINE AKTIVE RUNDE';$('nightTimer').textContent=active?timeString(Date.parse(round.ends_at)-Date.now()):'04:00:00';$('nightDescription').textContent=active?'Eure gemeinsame Halloween-Nacht läuft!':'Nur Admins können eine neue vierstündige Runde starten.';$('nightInfo').textContent=active?'Endet: '+new Date(round.ends_at).toLocaleString('de-DE'):'Alle Standorte bleiben bestehen. Jede neue Runde hat neue persönliche Häkchen.';$('nightProgress').style.width=active?Math.max(0,Math.min(100,(Date.now()-Date.parse(round.started_at))/(4*3600000)*100))+'%':'0%';$('startNight').disabled=active;$('startNight').textContent=active?'✓ Runde läuft':'▶ Halloween-Nacht starten'}
-async function toggleCollected(spot){if(!round||Date.parse(round.ends_at)<=Date.now()){alert('Kürbisse können nur während einer aktiven Halloween-Nacht abgehakt werden.');return}if(busy)return;busy=true;try{let result;if(collections.has(spot.id)){result=await supa.from('pumpkin_collections').delete().eq('round_id',round.id).eq('spot_id',spot.id).eq('user_id',user.id)}else{result=await supa.from('pumpkin_collections').insert({round_id:round.id,spot_id:spot.id,user_id:user.id})}if(result.error)throw result.error;if(collections.has(spot.id))collections.delete(spot.id);else collections.add(spot.id);spots.forEach(s=>s.status=collections.has(s.id)?'done':'open');render()}catch(e){alert('Sammelstatus konnte nicht gespeichert werden: '+errorText(e))}finally{busy=false}}
-function render(){const done=spots.filter(x=>x.status==='done').length,total=spots.length;$('total').textContent=total;$('normalCount').textContent=spots.filter(s=>s.type==='normal').length;$('goldCount').textContent=spots.filter(s=>s.type==='gold').length;$('openCount').textContent=total-done;$('doneCount').textContent=done;$('progressText').textContent=(total?Math.round(100*done/total):0)+'% abgeschlossen';let query=$('search').value.trim().toLowerCase(),type=$('typeFilter').value,status=$('statusFilter').value,sort=$('sort').value;let found=spots.filter(s=>[s.name,s.area,s.notes].some(v=>v.toLowerCase().includes(query))&&(type==='all'||s.type===type)&&(status==='all'||s.status===status||status==='check'&&false));found.sort((a,b)=>sort==='old'?a.created-b.created:sort==='name'?a.name.localeCompare(b.name,'de'):sort==='area'?a.area.localeCompare(b.area,'de'):sort==='gold'?Number(b.type==='gold')-Number(a.type==='gold'):b.created-a.created);const grid=$('spotGrid');grid.replaceChildren();if(!found.length){const d=document.createElement('div');d.className='empty';d.textContent='🎃 Keine Spots gefunden.';grid.append(d)}for(const spot of found){const card=document.createElement('article');card.className='panel spot'+(spot.type==='gold'?' gold':'');const cover=document.createElement('div');cover.className='cover';if(spot.image){const img=document.createElement('img');img.src=spot.image;img.loading='lazy';img.alt=spot.name;cover.append(img)}else{const ico=document.createElement('span');ico.className='emoji';ico.textContent=spot.type==='gold'?'🌟':'🎃';cover.append(ico)}const typeBadge=document.createElement('span');typeBadge.className='marker'+(spot.type==='gold'?' gold':'');typeBadge.textContent=spot.type==='gold'?'🌟 GOLDEN':'🎃 NORMAL';const statusBadge=document.createElement('span');statusBadge.className='statusbadge '+spot.status;statusBadge.textContent=labels[spot.status];cover.append(typeBadge,statusBadge);const body=document.createElement('div');body.className='spotbody';const h=document.createElement('h3');h.textContent=spot.name;const area=document.createElement('div');area.className='area';area.textContent='📍 '+spot.area;const note=document.createElement('p');note.textContent=spot.notes||'Keine Beschreibung';const actions=document.createElement('div');actions.className='actions';const checked=document.createElement('button');checked.className='small';checked.textContent=spot.status==='done'?'↩ Häkchen entfernen':'✓ Für mich gesammelt';checked.disabled=!round;checked.onclick=()=>toggleCollected(spot);actions.append(checked);if(isAdmin){const edit=document.createElement('button');edit.className='small';edit.textContent='✎ Bearbeiten';edit.onclick=()=>openModal(spot.id);const del=document.createElement('button');del.className='small danger';del.textContent='✕';del.onclick=()=>deleteSpot(spot);actions.append(edit,del)}body.append(h,area,note,actions);card.append(cover,body);grid.append(card)}renderHistory();renderMapMarkers()}
-async function renderHistory(){const box=$('history');box.replaceChildren();const previous=rounds.filter(r=>Date.parse(r.ends_at)<=Date.now()).slice(0,20);if(!previous.length){const row=document.createElement('div');row.className='historyrow muted';row.textContent='Noch keine abgeschlossenen Halloween-Nächte.';box.append(row);return}for(const r of previous){const row=document.createElement('div');row.className='historyrow';row.textContent='🌙 '+new Date(r.started_at).toLocaleString('de-DE')+' · 4 Stunden';box.append(row)}}
+async function refreshAll(){
+  if(!user||loading)return;
+  loading=true;
+  try{
+    const [a,b,c,d,cycle]=await Promise.all([
+      supa.from('pumpkin_admins').select('user_id').eq('user_id',user.id).maybeSingle(),
+      supa.from('pumpkin_spots').select('*').order('created_at',{ascending:false}).limit(1000),
+      supa.from('pumpkin_rounds').select('*').order('started_at',{ascending:false}).limit(60),
+      supa.from('profiles').select('username').eq('id',user.id).maybeSingle(),
+      supa.rpc('pumpkin_cycle_start')
+    ]);
+    for(const res of [a,b,c,d,cycle])if(res.error)throw res.error;
+    cycleStart=cycle.data;
+    isAdmin=!!a.data;
+    $('crewName').textContent=(isAdmin?'🛡️ Admin: ':'👤 ')+(d.data?.username||'Crew-Mitglied');
+    rounds=c.data||[];
+    round=rounds.find(r=>!r.stopped_at&&Date.parse(r.started_at)<=Date.now()&&Date.parse(r.ends_at)>Date.now())||null;
+    const marks=await supa.from('pumpkin_marks').select('spot_id,scope').eq('user_id',user.id).eq('cycle_start',cycleStart);
+    if(marks.error)throw marks.error;
+    collections=new Set((marks.data||[]).filter(m=>m.scope==='normal'||(isActiveNight()&&m.scope===round.id)).map(m=>m.spot_id));
+    spots=(b.data||[]).map(spotFromDB);
+    $('add').classList.toggle('hidden',!isAdmin);
+    $('startNight').classList.toggle('hidden',!isAdmin||isActiveNight());
+    $('stopNight').classList.toggle('hidden',!isAdmin||!isActiveNight());
+    $('import').classList.toggle('hidden',!isAdmin);
+    $('mapHelpAdmin').textContent=isAdmin?'Auf die Karte klicken, um Marker zu setzen.':'Marker anklicken, um Details zu sehen und eigene Kürbisse abzuhaken.';
+    $('syncError').classList.add('hidden');
+    render();updateNight();
+  }catch(e){showMessage('syncError','Synchronisierung fehlgeschlagen: '+errorText(e));$('syncError').classList.remove('hidden')}
+  finally{loading=false}
+}
+async function refreshNight(){await refreshAll()}
+async function startNight(){
+  if(!user||!isAdmin||busy)return;
+  if(!confirm('Halloween-Nacht jetzt für alle maximal 4 Stunden starten?'))return;
+  busy=true;
+  try{const {error}=await supa.rpc('start_pumpkin_round');if(error)throw error;await refreshAll()}
+  catch(e){alert('Start fehlgeschlagen: '+errorText(e))}
+  finally{busy=false}
+}
+$('startNight').onclick=startNight;
+async function stopNight(){
+  if(!user||!isAdmin||!isActiveNight()||busy)return;
+  if(!confirm('Halloween-Nacht wirklich JETZT für alle beenden? Goldene Kürbisse können danach nicht mehr gesammelt werden.'))return;
+  busy=true;
+  try{const {error}=await supa.rpc('stop_pumpkin_round');if(error)throw error;await refreshAll()}
+  catch(e){alert('Beenden fehlgeschlagen: '+errorText(e))}
+  finally{busy=false}
+}
+$('stopNight').onclick=stopNight;
+function updateNight(){
+  const active=isActiveNight();
+  $('nightPanel').classList.toggle('active',active);
+  $('nightBadge').textContent=active?'● RUNDE AKTIV':'● KEINE AKTIVE RUNDE';
+  $('nightTimer').textContent=active?timeString(Date.parse(round.ends_at)-Date.now()):'04:00:00';
+  $('nightDescription').textContent=active?'Goldene Kürbisse sind jetzt sammelbar!':'Normale Kürbisse jederzeit · Goldene nur während einer Halloween-Nacht.';
+  $('nightInfo').textContent=active?'Endet spätestens: '+new Date(round.ends_at).toLocaleString('de-DE')+' · Reset immer um 03:00, 12:00, 19:00 (Deutschland)':'Alle persönlichen Häkchen resetten um 03:00, 12:00 und 19:00 Uhr (Deutschland).';
+  $('nightProgress').style.width=active?Math.max(0,Math.min(100,(Date.now()-Date.parse(round.started_at))/(4*3600000)*100))+'%':'0%';
+  $('startNight').classList.toggle('hidden',!isAdmin||active);
+  $('stopNight').classList.toggle('hidden',!isAdmin||!active);
+}
+async function toggleCollected(spot){
+  if(!user)return;
+  if(!canCollect(spot)){
+    alert('Goldene Kürbisse kannst du nur während einer aktiven Halloween-Nacht sammeln.');return;
+  }
+  if(busy)return;
+  busy=true;
+  const scope=spot.type==='normal'?'normal':round.id;
+  try{
+    const wasChecked=collections.has(spot.id);
+    let result;
+    if(wasChecked){
+      result=await supa.from('pumpkin_marks').delete().eq('user_id',user.id).eq('spot_id',spot.id).eq('cycle_start',cycleStart).eq('scope',scope);
+    }else{
+      result=await supa.from('pumpkin_marks').insert({user_id:user.id,spot_id:spot.id,cycle_start:cycleStart,scope});
+    }
+    if(result.error)throw result.error;
+    await refreshAll();
+  }catch(e){alert('Sammelstatus konnte nicht gespeichert werden: '+errorText(e)+'\nEventuell war gerade ein Reset. Bitte neu laden.')}
+  finally{busy=false}
+}
+function render(){const done=spots.filter(x=>x.status==='done').length,total=spots.length;$('total').textContent=total;$('normalCount').textContent=spots.filter(s=>s.type==='normal').length;$('goldCount').textContent=spots.filter(s=>s.type==='gold').length;$('openCount').textContent=total-done;$('doneCount').textContent=done;$('progressText').textContent=(total?Math.round(100*done/total):0)+'% abgeschlossen';let query=$('search').value.trim().toLowerCase(),type=$('typeFilter').value,status=$('statusFilter').value,sort=$('sort').value;let found=spots.filter(s=>[s.name,s.area,s.notes].some(v=>v.toLowerCase().includes(query))&&(type==='all'||s.type===type)&&(status==='all'||s.status===status||status==='check'&&false));found.sort((a,b)=>sort==='old'?a.created-b.created:sort==='name'?a.name.localeCompare(b.name,'de'):sort==='area'?a.area.localeCompare(b.area,'de'):sort==='gold'?Number(b.type==='gold')-Number(a.type==='gold'):b.created-a.created);const grid=$('spotGrid');grid.replaceChildren();if(!found.length){const d=document.createElement('div');d.className='empty';d.textContent='🎃 Keine Spots gefunden.';grid.append(d)}for(const spot of found){const card=document.createElement('article');card.className='panel spot'+(spot.type==='gold'?' gold':'');const cover=document.createElement('div');cover.className='cover';if(spot.image){const img=document.createElement('img');img.src=spot.image;img.loading='lazy';img.alt=spot.name;cover.append(img)}else{const ico=document.createElement('span');ico.className='emoji';ico.textContent=spot.type==='gold'?'🌟':'🎃';cover.append(ico)}const typeBadge=document.createElement('span');typeBadge.className='marker'+(spot.type==='gold'?' gold':'');typeBadge.textContent=spot.type==='gold'?'🌟 GOLDEN':'🎃 NORMAL';const statusBadge=document.createElement('span');statusBadge.className='statusbadge '+spot.status;statusBadge.textContent=labels[spot.status];cover.append(typeBadge,statusBadge);const body=document.createElement('div');body.className='spotbody';const h=document.createElement('h3');h.textContent=spot.name;const area=document.createElement('div');area.className='area';area.textContent='📍 '+spot.area;const note=document.createElement('p');note.textContent=spot.notes||'Keine Beschreibung';const actions=document.createElement('div');actions.className='actions';const checked=document.createElement('button');checked.className='small';checked.textContent=spot.status==='done'?'↩ Häkchen entfernen':'✓ Für mich gesammelt';checked.disabled=!canCollect(spot);checked.onclick=()=>toggleCollected(spot);actions.append(checked);if(isAdmin){const edit=document.createElement('button');edit.className='small';edit.textContent='✎ Bearbeiten';edit.onclick=()=>openModal(spot.id);const del=document.createElement('button');del.className='small danger';del.textContent='✕';del.onclick=()=>deleteSpot(spot);actions.append(edit,del)}body.append(h,area,note,actions);card.append(cover,body);grid.append(card)}renderHistory();renderMapMarkers()}
+async function renderHistory(){const box=$('history');box.replaceChildren();const previous=rounds.filter(r=>r.stopped_at||Date.parse(r.ends_at)<=Date.now()).slice(0,20);if(!previous.length){const row=document.createElement('div');row.className='historyrow muted';row.textContent='Noch keine abgeschlossenen Halloween-Nächte.';box.append(row);return}for(const r of previous){const row=document.createElement('div');row.className='historyrow';row.textContent='🌙 '+new Date(r.started_at).toLocaleString('de-DE')+(r.stopped_at?' · vorzeitig beendet':' · beendet');box.append(row)}}
 ['search','typeFilter','statusFilter','sort'].forEach(id=>$(id).addEventListener(id==='search'?'input':'change',render));
 function updatePhoto(){$('imagePreview').classList.toggle('hidden',!photo);$('removeImage').classList.toggle('hidden',!photo);if(photo)$('imagePreview').src=photo;else $('imagePreview').removeAttribute('src')}
 function updatePositionLabel(){$('spotMapPosition').textContent=pendingPosition?(MAPS[pendingPosition.mapId]?.name||pendingPosition.mapId)+' · X '+Math.round(pendingPosition.x*100)+'% / Y '+Math.round(pendingPosition.y*100)+'%':'Bitte Position auf einer Karte auswählen';$('clearMapPosition').classList.add('hidden')}
@@ -640,12 +719,13 @@ function selectMap(id){
 }
 
 document.querySelectorAll('.map-tab').forEach(btn=>btn.onclick=()=>selectMap(btn.dataset.map));$('resetMapView').onclick=()=>{if(mapInstance&&mapBounds)mapInstance.fitBounds(mapBounds)};
-function renderMapMarkers(){if(!mapInstance||!mapLayer||!mapBounds)return;mapLayer.clearLayers();for(const spot of spots){if(spot.mapId!==activeMap)continue;const emoji=spot.type==='gold'?'🌟':'🎃';const marker=L.marker([(1-spot.y)*mapH,spot.x*mapW],{icon:L.divIcon({className:'pumpkin-pin '+(spot.type==='gold'?'gold ':'')+spot.status,html:'<span>'+emoji+'</span>',iconSize:[35,35],iconAnchor:[17,17]}),title:spot.name});const popup=document.createElement('div');const title=document.createElement('strong');title.textContent=spot.name;const line=document.createElement('div');line.textContent=spot.area+' · '+labels[spot.status];const button=document.createElement('button');button.type='button';button.textContent=spot.status==='done'?'↩ Häkchen entfernen':'✓ Für mich gesammelt';button.disabled=!round;button.onclick=async()=>{await toggleCollected(spot);mapInstance.closePopup()};popup.append(title,line,button);if(spot.image){const pic=document.createElement('img');pic.src=spot.image;pic.style.cssText='display:block;width:180px;max-height:120px;object-fit:cover;margin-top:7px;border-radius:7px';popup.append(pic)}if(isAdmin){const edit=document.createElement('button');edit.type='button';edit.textContent='✎ Bearbeiten';edit.onclick=()=>{mapInstance.closePopup();openModal(spot.id)};popup.append(edit)}marker.bindPopup(popup).addTo(mapLayer)}}
+function renderMapMarkers(){if(!mapInstance||!mapLayer||!mapBounds)return;mapLayer.clearLayers();for(const spot of spots){if(spot.mapId!==activeMap)continue;const emoji=spot.type==='gold'?'🌟':'🎃';const marker=L.marker([(1-spot.y)*mapH,spot.x*mapW],{icon:L.divIcon({className:'pumpkin-pin '+(spot.type==='gold'?'gold ':'')+spot.status,html:'<span>'+emoji+'</span>',iconSize:[35,35],iconAnchor:[17,17]}),title:spot.name});const popup=document.createElement('div');const title=document.createElement('strong');title.textContent=spot.name;const line=document.createElement('div');line.textContent=spot.area+' · '+labels[spot.status];const button=document.createElement('button');button.type='button';button.textContent=spot.status==='done'?'↩ Häkchen entfernen':'✓ Für mich gesammelt';button.disabled=!canCollect(spot);button.onclick=async()=>{await toggleCollected(spot);mapInstance.closePopup()};popup.append(title,line,button);if(spot.image){const pic=document.createElement('img');pic.src=spot.image;pic.style.cssText='display:block;width:180px;max-height:120px;object-fit:cover;margin-top:7px;border-radius:7px';popup.append(pic)}if(isAdmin){const edit=document.createElement('button');edit.type='button';edit.textContent='✎ Bearbeiten';edit.onclick=()=>{mapInstance.closePopup();openModal(spot.id)};popup.append(edit)}marker.bindPopup(popup).addTo(mapLayer)}}
 $('export').onclick=()=>{const blob=new Blob([JSON.stringify({app:'pumpkin-tracker',version:5,exportedAt:new Date().toISOString(),spots:spots.map(s=>({...s,status:undefined}))},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='pumpkin-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),2000)};
 $('import').onclick=()=>$('importFile').click();$('importFile').onchange=async e=>{const file=e.target.files?.[0];if(!file||!isAdmin)return;try{const data=JSON.parse(await file.text());if(!Array.isArray(data.spots))throw Error('Kein gültiges Backup');if(!confirm('Bis zu '+Math.min(100,data.spots.length)+' Spots in die gemeinsame Datenbank importieren?'))return;const list=data.spots.slice(0,100).filter(s=>s.name&&s.area&&Object.hasOwn(MAPS,s.mapId)&&Number.isFinite(s.x)&&Number.isFinite(s.y)).map(s=>({name:String(s.name).slice(0,65),area:String(s.area).slice(0,50),notes:String(s.notes||'').slice(0,1000),type:s.type==='gold'?'gold':'normal',map_id:s.mapId,x:s.x,y:s.y,image:typeof s.image==='string'&&s.image.length<800000?s.image:null,created_by:user.id}));if(!list.length)throw Error('Keine Spots mit Kartenposition enthalten.');const {error}=await supa.from('pumpkin_spots').insert(list);if(error)throw error;await refreshAll();alert(list.length+' Spots importiert.')}catch(e){alert('Import fehlgeschlagen: '+errorText(e))}finally{e.target.value=''}};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('modalbg').classList.contains('hidden'))closeModal()});
-setInterval(()=>{if(!user)return;updateNight();if(round&&Date.parse(round.ends_at)<=Date.now())refreshAll()},1000);
+setInterval(()=>{if(!user)return;updateNight()},1000);
 setInterval(()=>{if(user&&!document.hidden)refreshAll()},12000);
+document.addEventListener('visibilitychange',()=>{if(user&&!document.hidden)refreshAll()});
 $('statusFilter').querySelector('option[value="check"]')?.remove();
 $('status').closest('.field').classList.add('hidden');
 initAuth().catch(e=>showMessage('authMessage','Anmeldung nicht möglich: '+errorText(e)));
