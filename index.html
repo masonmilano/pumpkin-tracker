@@ -290,7 +290,7 @@ h1{letter-spacing:-1.3px}
     <div>PUMPKIN <b>TRACKER</b></div>
   </div>
   <div class="nav-actions">
-    <span class="tag">● CREW HQ</span>
+    <span class="tag" id="crewName">● CREW HQ</span>
     <button id="logout" class="small hidden">Abmelden</button>
   </div>
 </nav>
@@ -330,9 +330,7 @@ h1{letter-spacing:-1.3px}
     </form>
 
     <p class="hint">Keine persönliche E-Mail erforderlich.</p>
-    <button id="previewMode" style="width:100%;margin-top:12px">
-      Dashboard-Vorschau öffnen
-    </button>
+
   </div>
 </section>
 
@@ -347,7 +345,7 @@ h1{letter-spacing:-1.3px}
   </section>
 
   <div class="warning">
-    ⚠️ Lokale Vorschau: Halloween-Nächte, Spots und Screenshots werden derzeit nur in diesem Browser gespeichert. Für die gemeinsame Crew-Nutzung fehlt noch die Supabase-Datenbankanbindung.
+    ⚠️ Du bist echt über Supabase angemeldet. Spots, Screenshots und Halloween-Runden werden jedoch weiterhin nur in diesem Browser gespeichert und noch nicht mit anderen Crew-Mitgliedern synchronisiert.
   </div>
 
   <section id="nightPanel" class="panel night">
@@ -506,6 +504,7 @@ h1{letter-spacing:-1.3px}
 
 <footer class="footer">PUMPKIN TRACKER © 2026 · CREW HQ</footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 'use strict';
 
@@ -572,66 +571,146 @@ function setTab(next) {
 $('tabLogin').onclick = () => setTab('login');
 $('tabRegister').onclick = () => setTab('register');
 
+const supa = window.supabase?.createClient(
+  window.PUMPKIN_CONFIG.supabaseUrl,
+  window.PUMPKIN_CONFIG.publishableKey,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false
+    }
+  }
+);
+
+let activeUserId = null;
+let authBusy = false;
+
+function hideApp() {
+  activeUserId = null;
+  $('app').classList.add('hidden');
+  $('auth').classList.remove('hidden');
+  $('logout').classList.add('hidden');
+  $('crewName').textContent = '● CREW HQ';
+}
+
+function rememberUsername(id, username) {
+  try {
+    localStorage.setItem('pumpkin-tracker-user-' + id, username);
+  } catch { /* optional display name */ }
+}
+
+function usernameFor(id) {
+  try {
+    return localStorage.getItem('pumpkin-tracker-user-' + id) || 'Crew-Mitglied';
+  } catch {
+    return 'Crew-Mitglied';
+  }
+}
+
+function enterApp(user) {
+  if (!user || !user.id) return;
+  const changedUser = activeUserId !== user.id;
+  activeUserId = user.id;
+  $('crewName').textContent = '👤 ' + usernameFor(user.id);
+  $('auth').classList.add('hidden');
+  $('app').classList.remove('hidden');
+  $('logout').classList.remove('hidden');
+  if (changedUser) loadData();
+  render();
+  updateNight();
+}
+
+async function initAuth() {
+  if (!supa) {
+    message('authMessage', 'Supabase-Bibliothek konnte nicht geladen werden. Prüfe deine Internetverbindung.');
+    return;
+  }
+
+  // Bei Token-Ablauf hält Supabase die Sitzung automatisch aktuell.
+  // Eine Abmeldung schließt sofort das Dashboard.
+  supa.auth.onAuthStateChange((event) => {
+    if (event === 'SIGNED_OUT') hideApp();
+  });
+
+  const { data, error } = await supa.auth.getUser();
+  if (!error && data.user) enterApp(data.user);
+  else hideApp();
+}
+
 $('authForm').onsubmit = async e => {
   e.preventDefault();
+  if (authBusy || !supa) return;
 
   const username = $('username').value.trim();
   const password = $('password').value;
   const inviteCode = $('invite').value.trim();
+  const action = mode;
 
   if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
-    message('authMessage',
-      'Benutzername: 3–20 Zeichen, nur Buchstaben, Zahlen und _.');
+    message('authMessage', 'Benutzername: 3–20 Zeichen, nur Buchstaben, Zahlen und _.');
     return;
   }
-
-  if (mode === 'login') {
-    message('authMessage',
-      'Der echte Login-Endpunkt ist noch nicht fertig. Du kannst die Dashboard-Vorschau bereits nutzen.');
+  if (password.length < 8 || password.length > 128) {
+    message('authMessage', 'Passwort muss 8–128 Zeichen haben.');
+    return;
+  }
+  if (action === 'register' && (inviteCode.length < 8 || inviteCode.length > 256)) {
+    message('authMessage', 'Bitte einen gültigen Einladungscode eingeben.');
     return;
   }
 
   const btn = $('authButton');
+  authBusy = true;
   btn.disabled = true;
+  btn.textContent = action === 'login' ? 'Anmeldung läuft …' : 'Registrierung läuft …';
+  $('authMessage').classList.add('hidden');
 
   try {
     const config = window.PUMPKIN_CONFIG;
-
-    const response = await fetch(
-      config.supabaseUrl + '/functions/v1/pumpkin-auth',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: config.publishableKey
-        },
-        body: JSON.stringify({
-          username,
-          password,
-          inviteCode
-        })
-      }
-    );
-
+    const response = await fetch(config.supabaseUrl + '/functions/v1/pumpkin-auth', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': config.publishableKey
+      },
+      body: JSON.stringify({ action, username, password, inviteCode })
+    });
     const result = await response.json().catch(() => ({}));
-
     if (!response.ok || !result.success) {
-      throw new Error(result.error || 'Registrierung fehlgeschlagen.');
+      throw new Error(result.error || (action === 'login' ? 'Anmeldung fehlgeschlagen.' : 'Registrierung fehlgeschlagen.'));
     }
 
-    message(
-      'authMessage',
-      'Account erstellt. Der echte Login und die gemeinsame Datenspeicherung müssen noch fertiggestellt werden.',
-      true
-    );
+    if (action === 'register') {
+      $('password').value = '';
+      $('invite').value = '';
+      setTab('login');
+      $('username').value = username;
+      message('authMessage', 'Account erstellt! Melde dich jetzt mit deinem Benutzernamen und Passwort an.', true);
+      return;
+    }
 
+    if (!result.session?.access_token || !result.session?.refresh_token) {
+      throw new Error('Server hat keine gültige Sitzung zurückgegeben.');
+    }
+
+    const { data: sessionData, error: sessionError } = await supa.auth.setSession({
+      access_token: result.session.access_token,
+      refresh_token: result.session.refresh_token
+    });
+    if (sessionError || !sessionData.user) {
+      throw new Error('Sitzung konnte nicht gespeichert werden. Bitte erneut versuchen.');
+    }
+
+    rememberUsername(sessionData.user.id, result.username || username);
     $('password').value = '';
-    $('invite').value = '';
+    enterApp(sessionData.user);
   } catch (error) {
-    message('authMessage',
-      error.message || 'Verbindung zu Supabase fehlgeschlagen.');
+    message('authMessage', error.message || 'Verbindung zu Supabase fehlgeschlagen.');
   } finally {
+    authBusy = false;
     btn.disabled = false;
+    btn.textContent = mode === 'login' ? 'Anmelden →' : 'Registrieren →';
   }
 };
 
@@ -696,21 +775,20 @@ function saveSpots() {
   return saveJSON(SPOTS_KEY,spots);
 }
 
-function showApp() {
-  loadData();
-  $('auth').classList.add('hidden');
-  $('app').classList.remove('hidden');
-  $('logout').classList.remove('hidden');
-  render();
-  updateNight();
-}
-
-$('previewMode').onclick = showApp;
-
-$('logout').onclick = () => {
-  $('app').classList.add('hidden');
-  $('auth').classList.remove('hidden');
-  $('logout').classList.add('hidden');
+$('logout').onclick = async () => {
+  const btn = $('logout');
+  btn.disabled = true;
+  try {
+    if (supa) {
+      const { error } = await supa.auth.signOut({ scope: 'local' });
+      if (error) throw error;
+    }
+    hideApp();
+  } catch (error) {
+    alert('Abmeldung fehlgeschlagen: ' + error.message);
+  } finally {
+    btn.disabled = false;
+  }
 };
 
 function countDone() {
@@ -1303,6 +1381,10 @@ setInterval(() => {
     updateNight();
   }
 },1000);
+
+initAuth().catch(() => {
+  message('authMessage', 'Anmeldung konnte nicht geladen werden. Bitte Seite neu laden.');
+});
 </script>
 </body>
 </html>
