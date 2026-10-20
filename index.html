@@ -279,6 +279,25 @@ h1{letter-spacing:-1.3px}
   .cover{height:210px}
   .night{padding:17px}
 }
+
+/* Interaktive Karten */
+.map-panel{padding:18px;margin:22px 0}
+.map-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px}
+.map-head h2{margin:4px 0;font-size:22px}
+.map-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.map-tab.active{background:#382719;border-color:var(--orange);color:#ffd7b9}
+#pumpkinMap{height:clamp(350px,60vh,680px);width:100%;border:1px solid var(--border);border-radius:13px;background:#0c1520;overflow:hidden;z-index:0}
+.map-help{color:var(--muted);font-size:12px;line-height:1.6;margin-top:10px}
+.map-error{color:var(--red);font-size:13px;margin-top:10px}
+.pumpkin-pin{background:transparent;border:0}
+.pumpkin-pin span{display:grid;place-items:center;width:35px;height:35px;font-size:23px;border-radius:50%;background:#141920df;border:2px solid #ff923e;box-shadow:0 2px 8px #0009}
+.pumpkin-pin.gold span{border-color:var(--gold)}
+.pumpkin-pin.done span{opacity:.55;border-color:var(--green)}
+.leaflet-container{background:#0b1724;font-family:"DM Sans",sans-serif}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#181e26;color:white}
+.leaflet-popup-content{line-height:1.6}
+.leaflet-popup-content button{padding:6px 10px;margin-top:7px}
+@media(max-width:650px){.map-panel{padding:12px}#pumpkinMap{height:430px}}
 </style>
 </head>
 <body>
@@ -402,6 +421,22 @@ h1{letter-spacing:-1.3px}
     </div>
   </section>
 
+  <section class="panel map-panel">
+    <div class="map-head">
+      <div><div class="eyebrow">INTERAKTIVE KARTE</div><h2>🗺️ Kürbis-Fundorte</h2></div>
+      <button id="resetMapView" class="small" type="button">⤢ Karte zentrieren</button>
+    </div>
+    <div class="map-tabs" id="mapTabs">
+      <button type="button" class="map-tab active" data-map="los-santos">Los Santos</button>
+      <button type="button" class="map-tab" data-map="roxwood">Roxwood</button>
+      <button type="button" class="map-tab" data-map="cayo-perico">Cayo Perico</button>
+      <button type="button" class="map-tab" data-map="galapagos">Galapagos</button>
+    </div>
+    <div id="pumpkinMap" aria-label="Interaktive Kürbiskarte"></div>
+    <div class="map-help">🎃 Karte anklicken → neuen Fundort erstellen. Vorhandene Marker anklicken → bearbeiten. Mit Mausrad oder +/− zoomen und Karte ziehen.</div>
+    <div id="mapError" class="map-error hidden"></div>
+  </section>
+
   <div class="tools">
     <input id="search" class="control search" placeholder="🔎 Spots, Gebiete oder Hinweise suchen ...">
 
@@ -462,6 +497,12 @@ h1{letter-spacing:-1.3px}
       </div>
 
       <div class="field">
+        <label>Position auf der Karte</label>
+        <div id="spotMapPosition" class="hint">Keine Kartenposition ausgewählt</div>
+        <button id="clearMapPosition" type="button" class="small">Kartenposition entfernen</button>
+      </div>
+
+      <div class="field">
         <label for="spotName">Spot-Name</label>
         <input id="spotName" required maxlength="65" placeholder="z. B. Vinewood Hills">
       </div>
@@ -504,6 +545,8 @@ h1{letter-spacing:-1.3px}
 
 <footer class="footer">PUMPKIN TRACKER © 2026 · CREW HQ</footer>
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 'use strict';
@@ -527,6 +570,20 @@ let mode = 'login';
 let editId = null;
 let photo = null;
 let photoRequest = 0;
+const MAPS = {
+  'los-santos': {name:'Los Santos',src:'los-santos.png'},
+  'roxwood': {name:'Roxwood',src:'roxwood.png'},
+  'cayo-perico': {name:'Cayo Perico',src:'cayo-perico.png'},
+  'galapagos': {name:'Galapagos',src:'galapagos.png'}
+};
+let activeMap = 'los-santos';
+let mapInstance = null;
+let mapOverlay = null;
+let mapMarkerLayer = null;
+let mapW = 1000, mapH = 1000;
+let mapBounds = null;
+let mapLoadToken = 0;
+let pendingPosition = null;
 
 function readJSON(key, fallback) {
   try {
@@ -619,6 +676,7 @@ function enterApp(user) {
   if (changedUser) loadData();
   render();
   updateNight();
+  initializeMap();
 }
 
 async function initAuth() {
@@ -723,6 +781,9 @@ function cleanSpot(s) {
     area: String(s.area || 'Unbekannt').slice(0,50),
     notes: String(s.notes || s.note || '').slice(0,1000),
     type: s.type === 'gold' ? 'gold' : 'normal',
+    mapId: Object.hasOwn(MAPS, s.mapId) ? s.mapId : null,
+    x: typeof s.x === 'number' && Number.isFinite(s.x) ? Math.max(0,Math.min(1,s.x)) : null,
+    y: typeof s.y === 'number' && Number.isFinite(s.y) ? Math.max(0,Math.min(1,s.y)) : null,
     status: ['open','check','done'].includes(s.status)
       ? s.status
       : (s.collected ? 'done' : 'open'),
@@ -1059,6 +1120,7 @@ function render() {
   }
 
   renderHistory();
+  renderMapMarkers();
 }
 
 function renderHistory() {
@@ -1106,7 +1168,20 @@ function updatePhoto() {
   else $('imagePreview').removeAttribute('src');
 }
 
-function openModal(id = null) {
+function updatePositionLabel(){
+  $('spotMapPosition').textContent = pendingPosition
+    ? (MAPS[pendingPosition.mapId]?.name || pendingPosition.mapId) +
+      ' · X ' + Math.round(pendingPosition.x * 100) + '% / Y ' + Math.round(pendingPosition.y * 100) + '%'
+    : 'Keine Kartenposition ausgewählt';
+  $('clearMapPosition').classList.toggle('hidden',!pendingPosition);
+}
+
+$('clearMapPosition').onclick = () => {
+  pendingPosition = null;
+  updatePositionLabel();
+};
+
+function openModal(id = null, clickedPosition = null) {
   editId = id;
   const spot = spots.find(s => s.id === id);
 
@@ -1126,6 +1201,9 @@ function openModal(id = null) {
     (spot?.type || 'normal') + '"]'
   ).checked = true;
 
+  pendingPosition = clickedPosition || (spot?.mapId && spot.x != null && spot.y != null
+    ? {mapId:spot.mapId,x:spot.x,y:spot.y} : null);
+  updatePositionLabel();
   photo = spot?.image || null;
   updatePhoto();
   $('modalbg').classList.remove('hidden');
@@ -1136,6 +1214,7 @@ function closeModal() {
   $('modalbg').classList.add('hidden');
   editId = null;
   photo = null;
+  pendingPosition = null;
   $('spotImage').value = '';
   $('saveSpot').disabled = false;
 }
@@ -1271,12 +1350,16 @@ $('spotForm').onsubmit = e => {
     const spot = spots.find(s => s.id === editId);
     if (!spot) return;
     Object.assign(spot,{
-      name,area,notes,status,type,image:photo
+      name,area,notes,status,type,image:photo,
+      mapId:pendingPosition?.mapId || null,
+      x:pendingPosition?.x ?? null,y:pendingPosition?.y ?? null
     });
   } else {
     spots.unshift({
       id:crypto.randomUUID(),
       name,area,notes,status,type,
+      mapId:pendingPosition?.mapId || null,
+      x:pendingPosition?.x ?? null,y:pendingPosition?.y ?? null,
       image:photo,
       created:Date.now()
     });
@@ -1290,6 +1373,104 @@ $('spotForm').onsubmit = e => {
   closeModal();
   render();
 };
+
+// KARTE: Leaflet mit lokalen GitHub-PNGs (Dateien im Repo-Hauptordner)
+function initializeMap() {
+  if (!window.L) {
+    $('mapError').textContent = 'Kartenbibliothek konnte nicht geladen werden. Internetverbindung prüfen.';
+    $('mapError').classList.remove('hidden');
+    return;
+  }
+  if (!mapInstance) {
+    mapInstance = L.map('pumpkinMap', {
+      crs:L.CRS.Simple, zoomControl:true, attributionControl:false,
+      minZoom:-5, maxZoom:4, zoomSnap:0.25,
+      wheelPxPerZoomLevel:100
+    });
+    mapMarkerLayer = L.layerGroup().addTo(mapInstance);
+    mapInstance.on('click', e => {
+      if (!mapBounds) return;
+      const x = e.latlng.lng / mapW;
+      const y = 1 - e.latlng.lat / mapH;
+      if (x < 0 || x > 1 || y < 0 || y > 1) return;
+      openModal(null, {mapId:activeMap,x,y});
+    });
+  }
+  requestAnimationFrame(() => {
+    mapInstance.invalidateSize();
+    selectMap(activeMap);
+  });
+}
+
+function selectMap(mapId) {
+  if (!Object.hasOwn(MAPS,mapId)) return;
+  activeMap = mapId;
+  document.querySelectorAll('.map-tab').forEach(btn => {
+    btn.classList.toggle('active',btn.dataset.map === mapId);
+  });
+  if (!mapInstance) return;
+  const token = ++mapLoadToken;
+  const testImg = new Image();
+  const src = MAPS[mapId].src;
+  $('mapError').classList.add('hidden');
+  testImg.onload = () => {
+    if (token !== mapLoadToken) return;
+    mapW = testImg.naturalWidth;
+    mapH = testImg.naturalHeight;
+    mapBounds = [[0,0],[mapH,mapW]];
+    if (mapOverlay) mapInstance.removeLayer(mapOverlay);
+    mapOverlay = L.imageOverlay(src,mapBounds).addTo(mapInstance);
+    mapInstance.setMaxBounds(mapBounds);
+    mapInstance.fitBounds(mapBounds,{animate:false});
+    mapInstance.setMinZoom(Math.min(-5,mapInstance.getZoom()-1));
+    renderMapMarkers();
+  };
+  testImg.onerror = () => {
+    if (token !== mapLoadToken) return;
+    if (mapOverlay) mapInstance.removeLayer(mapOverlay);
+    mapOverlay = null;
+    mapBounds = null;
+    mapMarkerLayer?.clearLayers();
+    $('mapError').textContent = 'Bild fehlt: ' + src + ' – Dateiname und Speicherort in GitHub prüfen.';
+    $('mapError').classList.remove('hidden');
+  };
+  testImg.src = src;
+}
+
+document.querySelectorAll('.map-tab').forEach(btn => {
+  btn.addEventListener('click', () => selectMap(btn.dataset.map));
+});
+$('resetMapView').onclick = () => {
+  if (mapInstance && mapBounds) mapInstance.fitBounds(mapBounds);
+};
+
+function renderMapMarkers() {
+  if (!mapInstance || !mapMarkerLayer || !mapBounds) return;
+  mapMarkerLayer.clearLayers();
+  for (const spot of spots) {
+    if (spot.mapId !== activeMap || spot.x == null || spot.y == null) continue;
+    const emoji = spot.type === 'gold' ? '🌟' : '🎃';
+    const marker = L.marker([(1-spot.y)*mapH,spot.x*mapW], {
+      icon:L.divIcon({
+        className:'pumpkin-pin ' + (spot.type === 'gold' ? 'gold ' : '') + spot.status,
+        html:'<span>' + emoji + '</span>', iconSize:[35,35],iconAnchor:[17,17]
+      }),
+      title:spot.name
+    });
+    const wrapper = document.createElement('div');
+    const title = document.createElement('strong');
+    title.textContent = spot.name;
+    const line = document.createElement('div');
+    line.textContent = (spot.area || '') + ' · ' + (labels[spot.status] || '');
+    const editButton = document.createElement('button');
+    editButton.type = 'button';
+    editButton.textContent = '✎ Spot bearbeiten';
+    editButton.onclick = () => {mapInstance.closePopup();openModal(spot.id);};
+    wrapper.append(title,line,editButton);
+    marker.bindPopup(wrapper);
+    marker.addTo(mapMarkerLayer);
+  }
+}
 
 $('export').onclick = () => {
   const backup = {
